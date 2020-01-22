@@ -15,11 +15,15 @@ namespace ZeroByterGames.BlockBuilder {
 
         private List<Vector3> vertices = new List<Vector3>();
         private List<int> triangles = new List<int>();
+        public List<Vector2> uvs = new List<Vector2>();
 
-        private bool[,,] modelData = new bool[16, 16, 16];
+        private int[,,] modelData = new int[16, 16, 16];
         public int cubesCount;
 
         private Vector3Int chunkPosition;
+
+        private float materialTextureWidth = 128;
+        private float materialTextureHeight = 1;
 
         private void Awake()
         {
@@ -27,14 +31,17 @@ namespace ZeroByterGames.BlockBuilder {
             meshRenderer = gameObject.AddComponent<MeshRenderer>();
             meshCollider = gameObject.AddComponent<MeshCollider>();
 
-            meshRenderer.material = new Material(Shader.Find("Diffuse"));
-
             mesh = new Mesh();
             meshFilter.sharedMesh = mesh;
             meshCollider.sharedMesh = mesh;
 
             var pos = transform.position;
             chunkPosition = new Vector3Int((int)pos.x / 16, (int)pos.y / 16, (int)pos.z / 16);
+        }
+
+        public void SetMaterial(Material material)
+        {
+            meshRenderer.material = material;
         }
 
         public Mesh GetMesh()
@@ -47,6 +54,7 @@ namespace ZeroByterGames.BlockBuilder {
             mesh.Clear();
             vertices.Clear();
             triangles.Clear();
+            uvs.Clear();
 
             for (int x = 0; x < modelData.GetLength(0); x++)
             {
@@ -54,24 +62,25 @@ namespace ZeroByterGames.BlockBuilder {
                 {
                     for (int z = 0; z < modelData.GetLength(2); z++)
                     {
-                        if (!GetCube(x, y, z)) continue;
+                        if (!DoesCubeExist(x, y, z)) continue;
 
                         List<Vector3> faces = new List<Vector3>();
 
-                        if (!GetCube(x, y, z + 1)) faces.Add(Vector3.forward);
-                        if (!GetCube(x, y, z - 1)) faces.Add(Vector3.back);
-                        if (!GetCube(x + 1, y, z)) faces.Add(Vector3.right);
-                        if (!GetCube(x - 1, y, z)) faces.Add(Vector3.left);
-                        if (!GetCube(x, y + 1, z)) faces.Add(Vector3.up);
-                        if (!GetCube(x, y - 1, z)) faces.Add(Vector3.down);
+                        if (!DoesCubeExist(x, y, z + 1)) faces.Add(Vector3.forward);
+                        if (!DoesCubeExist(x, y, z - 1)) faces.Add(Vector3.back);
+                        if (!DoesCubeExist(x + 1, y, z)) faces.Add(Vector3.right);
+                        if (!DoesCubeExist(x - 1, y, z)) faces.Add(Vector3.left);
+                        if (!DoesCubeExist(x, y + 1, z)) faces.Add(Vector3.up);
+                        if (!DoesCubeExist(x, y - 1, z)) faces.Add(Vector3.down);
 
-                        AddCubeQuads(new Vector3(x, y, z), faces.ToArray());
+                        AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), Random.Range(0, 128), 2);
                     }
                 }
             }
 
             mesh.vertices = vertices.ToArray();
             mesh.SetTriangles(triangles.ToArray(), 0);
+            mesh.uv = uvs.ToArray();
 
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
@@ -87,7 +96,7 @@ namespace ZeroByterGames.BlockBuilder {
             triangles.Add(offset + vertex3);
         }
 
-        private void AddQuad(Vector3 origin, Vector3 normal)
+        private void AddQuad(Vector3 origin, Vector3 normal, int uvTileX, int uvTileY)
         {
             int count = vertices.Count;
 
@@ -151,9 +160,14 @@ namespace ZeroByterGames.BlockBuilder {
                 AddTriangle(count, 0, 1, 2);
                 AddTriangle(count, 0, 2, 3);
             }
+
+            uvs.Add(new Vector2(uvTileX / materialTextureWidth, uvTileY / materialTextureHeight));
+            uvs.Add(new Vector2(uvTileX / materialTextureWidth, uvTileY / materialTextureHeight));
+            uvs.Add(new Vector2((uvTileX + 1) / materialTextureWidth, (uvTileY + 1) / materialTextureHeight));
+            uvs.Add(new Vector2((uvTileX + 1)/ materialTextureWidth, (uvTileY + 1) / materialTextureHeight));
         }
 
-        private void AddCubeQuads(Vector3 origin, Vector3[] faces)
+        private void AddCubeQuads(Vector3 origin, Vector3[] faces, int uvTileX, int uvTileY)
         {
             foreach(var face in faces)
             {
@@ -161,7 +175,7 @@ namespace ZeroByterGames.BlockBuilder {
 
                 if (face == Vector3.up || face == Vector3.right || face == Vector3.forward) offset = face;
 
-                AddQuad(origin + offset, face);
+                AddQuad(origin + offset, face, uvTileX, uvTileY);
             }
         }
 
@@ -169,7 +183,7 @@ namespace ZeroByterGames.BlockBuilder {
         {
             if (x < 0 || x >= modelData.GetLength(0) || y < 0 || y >= modelData.GetLength(1) || z < 0 || z >= modelData.GetLength(2)) return;
 
-            modelData[x, y, z] = true;
+            modelData[x, y, z] = 1;
             cubesCount++;
 
             UpdateAdjacentChunk(x, y, z);
@@ -181,7 +195,7 @@ namespace ZeroByterGames.BlockBuilder {
         {
             if (x < 0 || x >= modelData.GetLength(0) || y < 0 || y >= modelData.GetLength(1) || z < 0 || z >= modelData.GetLength(2)) return;
 
-            modelData[x, y, z] = false;
+            modelData[x, y, z] = 0;
             cubesCount--;
 
             UpdateAdjacentChunk(x, y, z);
@@ -206,13 +220,21 @@ namespace ZeroByterGames.BlockBuilder {
             if (z >= modelData.GetLength(2) - 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z + 1);
         }
 
-        public bool GetCube(int x, int y, int z)
+        public bool DoesCubeExist(int x, int y, int z)
         {
             if (x < 0 || y < 0 || z < 0) return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
             if (x >= modelData.GetLength(0) || y >= modelData.GetLength(1) || z >= modelData.GetLength(2))
             {
                 return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
             }
+
+            return modelData[x, y, z] > 0;
+        }
+
+        public int GetCubeColor(int x, int y, int z)
+        {
+            if (x < 0 || y < 0 || z < 0) return ModelManager.GetCubeColor(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
+            if (x >= modelData.GetLength(0) || y >= modelData.GetLength(1) || z >= modelData.GetLength(2)) return ModelManager.GetCubeColor(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
 
             return modelData[x, y, z];
         }

@@ -9,25 +9,26 @@ namespace ZeroByterGames.BlockBuilder
 	{
         private static ModelManager Singleton;
 
+        public Material defaultMaterial;
+
         public static Mesh GetCompleteMesh()
         {
             if (Singleton == null) return null;
 
-            var vertices = new List<Vector3>();
-            var triangles = new List<int>();
+            var chunks = Singleton.chunks.Values.ToArray();
+            var combines = new CombineInstance[chunks.Length];
 
-            foreach(var chunk in Singleton.chunks.Values)
+            for (int i = 0; i < chunks.Length; i++)
             {
-                var mesh = chunk.GetMesh();
+                ChunkController chunk = chunks[i];
 
-                vertices.AddRange(mesh.vertices);
-                triangles.AddRange(mesh.triangles);
+                combines[i].mesh = chunk.GetMesh();
+                combines[i].transform = chunk.transform.localToWorldMatrix;
             }
 
             var wholeMesh = new Mesh();
 
-            wholeMesh.vertices = vertices.ToArray();
-            wholeMesh.triangles = triangles.ToArray();
+            wholeMesh.CombineMeshes(combines);
 
             return wholeMesh;
         }
@@ -67,11 +68,42 @@ namespace ZeroByterGames.BlockBuilder
             chunk.RemoveCube(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16));
         }
 
+        public static int GetCubeColor(int x, int y, int z)
+        {
+            if (Singleton == null) return 0;
+
+            int chunkX = Mathf.FloorToInt(x / 16f);
+            int chunkY = Mathf.FloorToInt(y / 16f);
+            int chunkZ = Mathf.FloorToInt(z / 16f);
+            int chunkKey = Singleton.Vector3ToInt(chunkX, chunkY, chunkZ);
+
+            ChunkController chunk;
+
+            if (!Singleton.chunks.TryGetValue(chunkKey, out chunk))
+            {
+                return 0;
+            }
+
+            return chunk.GetCubeColor(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16));
+        }
+
         public static bool GetCube(int x, int y, int z)
         {
             if (Singleton == null) return false;
 
-            return Singleton._GetCube(x, y, z);
+            int chunkX = Mathf.FloorToInt(x / 16f);
+            int chunkY = Mathf.FloorToInt(y / 16f);
+            int chunkZ = Mathf.FloorToInt(z / 16f);
+            int chunkKey = Singleton.Vector3ToInt(chunkX, chunkY, chunkZ);
+
+            ChunkController chunk;
+
+            if (!Singleton.chunks.TryGetValue(chunkKey, out chunk))
+            {
+                return false;
+            }
+
+            return chunk.DoesCubeExist(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16));
         }
 
         public static void RemoveChunk(int x, int y, int z)
@@ -94,13 +126,6 @@ namespace ZeroByterGames.BlockBuilder
             if(chunk != null) chunk.UpdateMesh();
         }
 
-        public static void UpdateChunkDelayed(int x, int y, int z)
-        {
-            if (Singleton == null) return;
-
-            Singleton.StartCoroutine(Singleton.UpdateMeshCoroutine(x, y, z));
-        }
-
         private Dictionary<int, ChunkController> chunks = new Dictionary<int, ChunkController>();
 
         private void Awake()
@@ -110,20 +135,15 @@ namespace ZeroByterGames.BlockBuilder
             AddCube(0, 0, 0);
         }
 
-        private IEnumerator UpdateMeshCoroutine(int x, int y, int z)
-        {
-            yield return new WaitForSeconds(1);
-
-            UpdateChunk(x, y, z);
-        }
-
         private ChunkController CreateChunk(int x, int y, int z)
         {
-            var newChunk = new GameObject($"Chunk({x},{y},{z})");
-            var chunkTransform = newChunk.transform;
+            var chunkObject = new GameObject($"Chunk({x},{y},{z})");
+            var chunkTransform = chunkObject.transform;
             chunkTransform.position = new Vector3(x * 16, y * 16, z * 16);
             chunkTransform.parent = transform;
-            return newChunk.AddComponent<ChunkController>();
+            var chunk = chunkObject.AddComponent<ChunkController>();
+            chunk.SetMaterial(defaultMaterial);
+            return chunk;
         }
 
         private ChunkController GetChunkByBlock(int x, int y, int z)
@@ -155,23 +175,6 @@ namespace ZeroByterGames.BlockBuilder
             }
 
             return chunk;
-        }
-
-        private bool _GetCube(int x, int y, int z)
-        {
-            int chunkX = Mathf.FloorToInt(x / 16f);
-            int chunkY = Mathf.FloorToInt(y / 16f);
-            int chunkZ = Mathf.FloorToInt(z / 16f);
-            int chunkKey = Vector3ToInt(chunkX, chunkY, chunkZ);
-
-            ChunkController chunk;
-
-            if (!chunks.TryGetValue(chunkKey, out chunk))
-            {
-                return false;
-            }
-
-            return chunk.GetCube(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16));
         }
 
         private int Vector3ToInt(int x, int y, int z)

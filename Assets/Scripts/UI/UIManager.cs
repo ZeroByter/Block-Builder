@@ -6,7 +6,7 @@ namespace ZeroByterGames.BlockBuilder.UI
 	{
 		public void ExportObj()
 		{
-			ExportController.ExportTest(ModelManager.GetTestMesh());
+			ExportController.ExportTest(ModelManager.GetCompleteMesh());
 		}
 	}
 }

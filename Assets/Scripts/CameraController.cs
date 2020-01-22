@@ -85,11 +85,22 @@ namespace ZeroByterGames.BlockBuilder
 
         private void DoLooking()
         {
-            float mouseX = Input.GetAxis("Mouse X");
-            float mouseY = -Input.GetAxis("Mouse Y");
+            float horizontal = Input.GetAxisRaw("Mouse X") * 1f;
+            float vertical = Input.GetAxisRaw("Mouse Y") * 1f;
 
-            transform.rotation *= Quaternion.Euler(mouseY, mouseX, 0);
-            transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, 0);
+            var moveObject = transform;
+
+            float rotationX = moveObject.localEulerAngles.x;
+            float newRotationY = moveObject.localEulerAngles.y + horizontal;
+
+            // Weird clamping code due to weird Euler angle mapping...
+            float newRotationX = (rotationX - vertical);
+            if (rotationX <= 90.0f && newRotationX >= 0.0f)
+                newRotationX = Mathf.Clamp(newRotationX, 0.0f, 90.0f);
+            if (rotationX >= 270.0f)
+                newRotationX = Mathf.Clamp(newRotationX, 270.0f, 360.0f);
+
+            moveObject.localRotation = Quaternion.Euler(newRotationX, newRotationY, moveObject.localEulerAngles.z);
         }
 
         private void DoMovement()

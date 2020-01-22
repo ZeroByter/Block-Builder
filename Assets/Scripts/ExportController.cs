@@ -34,7 +34,7 @@ namespace ZeroByterGames.BlockBuilder
 				data += string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}\n", mesh.triangles[i * 3] + 1, mesh.triangles[i * 3 + 1] + 1, mesh.triangles[i * 3 + 2] + 1);
 			}
 
-			File.WriteAllText(@"C:\Users\User\Unity Projects\Block Builder Tool\Assets\test.obj", data);
+			File.WriteAllText(@"I:\Unity Projects\Block Builder\Assets\test.obj", data);
 		}
 	}
 }
