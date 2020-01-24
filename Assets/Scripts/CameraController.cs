@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using ZeroByterGames.BlockBuilder.UI;
+using static ZeroByterGames.BlockBuilder.UI.ToolbarController;
 
 namespace ZeroByterGames.BlockBuilder
 {
@@ -19,42 +21,72 @@ namespace ZeroByterGames.BlockBuilder
         {
             if (EventSystem.current.IsPointerOverGameObject()) return;
 
-            if (Input.GetKeyDown(KeyCode.Mouse0))
+            var currentTool = GetCurrentTool();
+
+            if (currentTool == Tool.Create)
             {
-                RaycastHit hit;
-                var ray = camera.ScreenPointToRay(Input.mousePosition);
-                if (Physics.Raycast(ray, out hit))
+                if (Input.GetKeyDown(KeyCode.Mouse0))
                 {
-                    int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / 2);
-                    int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / 2);
-                    int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / 2);
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
 
-                    ModelManager.AddCube(x, y, z);
-                }
-                else
-                {
-                    var point = ray.GetPoint(5);
-                    int x = Mathf.FloorToInt(point.x);
-                    int y = Mathf.FloorToInt(point.y);
-                    int z = Mathf.FloorToInt(point.z);
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / 2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / 2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / 2);
 
-                    ModelManager.AddCube(x, y, z);
+                        ModelManager.AddCube(x, y, z);
+                    }
+                    else
+                    {
+                        var point = ray.GetPoint(5);
+                        int x = Mathf.FloorToInt(point.x);
+                        int y = Mathf.FloorToInt(point.y);
+                        int z = Mathf.FloorToInt(point.z);
+
+                        ModelManager.AddCube(x, y, z);
+                    }
                 }
             }
-            /*else if (Input.GetKeyDown(KeyCode.Mouse1) && !Input.GetKey(KeyCode.Mouse1))
+            else if (currentTool == Tool.Destroy)
             {
-                RaycastHit hit;
-                if (Physics.Raycast(transform.position, transform.forward, out hit))
+                if (Input.GetKeyDown(KeyCode.Mouse0))
                 {
-                    var cubePosition = hit.point;
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
 
-                    int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
-                    int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
-                    int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        var cubePosition = hit.point;
 
-                    ModelManager.RemoveCube(x, y, z);
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
+
+                        ModelManager.RemoveCube(x, y, z);
+                    }
                 }
-            }*/
+            }
+            else if (currentTool == Tool.Paint)
+            {
+                if (Input.GetKey(KeyCode.Mouse0))
+                {
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
+
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        var cubePosition = hit.point;
+
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
+
+                        ModelManager.AddCube(x, y, z);
+                    }
+                }
+            }
 
             if (Input.GetKeyDown(KeyCode.Mouse1))
             {

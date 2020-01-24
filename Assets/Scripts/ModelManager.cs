@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using ZeroByterGames.BlockBuilder.UI;
 
 namespace ZeroByterGames.BlockBuilder
 {
@@ -30,6 +31,10 @@ namespace ZeroByterGames.BlockBuilder
 
             wholeMesh.CombineMeshes(combines);
 
+            wholeMesh.RecalculateNormals();
+            wholeMesh.RecalculateTangents();
+            wholeMesh.RecalculateBounds();
+
             return wholeMesh;
         }
 
@@ -50,7 +55,8 @@ namespace ZeroByterGames.BlockBuilder
                 Singleton.chunks.Add(chunkKey, chunk);
             }
 
-            chunk.AddCube(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16));
+            var closestColor = ColorpickerController.GetClosestColor();
+            chunk.AddCube(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16), closestColor.x, closestColor.y);
         }
 
         public static void RemoveCube(int x, int y, int z)
@@ -131,8 +137,6 @@ namespace ZeroByterGames.BlockBuilder
         private void Awake()
         {
             Singleton = this;
-            
-            AddCube(0, 0, 0);
         }
 
         private ChunkController CreateChunk(int x, int y, int z)

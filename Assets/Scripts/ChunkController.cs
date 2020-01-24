@@ -73,7 +73,11 @@ namespace ZeroByterGames.BlockBuilder {
                         if (!DoesCubeExist(x, y + 1, z)) faces.Add(Vector3.up);
                         if (!DoesCubeExist(x, y - 1, z)) faces.Add(Vector3.down);
 
-                        AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), Random.Range(0, 128), 2);
+                        var colorValue = modelData[x, y, z];
+                        int paletteWidth = ColorPaletteManager.GetPaletteWidth();
+                        int uvY = Mathf.FloorToInt(colorValue / (float)paletteWidth);
+
+                        AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), colorValue % paletteWidth, uvY);
                     }
                 }
             }
@@ -179,11 +183,11 @@ namespace ZeroByterGames.BlockBuilder {
             }
         }
 
-        public void AddCube(int x, int y, int z)
+        public void AddCube(int x, int y, int z, int uvTileX, int uvTileY)
         {
             if (x < 0 || x >= modelData.GetLength(0) || y < 0 || y >= modelData.GetLength(1) || z < 0 || z >= modelData.GetLength(2)) return;
 
-            modelData[x, y, z] = 1;
+            modelData[x, y, z] = uvTileX + uvTileX * ColorPaletteManager.GetPaletteWidth();
             cubesCount++;
 
             UpdateAdjacentChunk(x, y, z);
