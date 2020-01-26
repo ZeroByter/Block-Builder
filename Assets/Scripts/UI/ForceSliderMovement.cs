@@ -5,8 +5,7 @@ namespace ZeroByterGames.BlockBuilder.UI
 {
 	public class ForceSliderMovement : MonoBehaviour
 	{
-		public Transform canvas;
-
+		private Transform canvas;
 		private Slider slider;
 		private RectTransform rect;
 
@@ -14,6 +13,8 @@ namespace ZeroByterGames.BlockBuilder.UI
 		{
 			slider = GetComponent<Slider>();
 			rect = GetComponent<RectTransform>();
+
+			canvas = GetComponentInParent<Canvas>().transform;
 		}
 
 		private void Update()
