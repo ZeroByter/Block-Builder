@@ -14,17 +14,12 @@ namespace ZeroByterGames.BlockBuilder {
 
         private Mesh mesh;
 
-        private List<Vector3> vertices = new List<Vector3>();
-        private List<int> triangles = new List<int>();
-        public List<Vector2> uvs = new List<Vector2>();
+        private MeshManipulationUtilities meshManipulation = new MeshManipulationUtilities();
 
         private int[,,] modelData = new int[16, 16, 16];
         public int cubesCount;
 
         private Vector3Int chunkPosition;
-
-        private float materialTextureWidth = 128;
-        private float materialTextureHeight = 1;
 
         private void Awake()
         {
@@ -53,9 +48,7 @@ namespace ZeroByterGames.BlockBuilder {
         public void UpdateMesh()
         {
             mesh.Clear();
-            vertices.Clear();
-            triangles.Clear();
-            uvs.Clear();
+            meshManipulation.Clear();
 
             for (int x = 0; x < modelData.GetLength(0); x++)
             {
@@ -78,110 +71,20 @@ namespace ZeroByterGames.BlockBuilder {
                         int paletteWidth = ColorPaletteManager.GetPaletteWidth();
                         int uvY = Mathf.FloorToInt(colorValue / (float)paletteWidth);
 
-                        AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), colorValue % paletteWidth, uvY);
+                        meshManipulation.AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), colorValue % paletteWidth, uvY);
                     }
                 }
             }
 
-            mesh.vertices = vertices.ToArray();
-            mesh.SetTriangles(triangles.ToArray(), 0);
-            mesh.uv = uvs.ToArray();
+            mesh.vertices = meshManipulation.GetVerticesArray();
+            mesh.SetTriangles(meshManipulation.GetTrianglesArray(), 0);
+            mesh.uv = meshManipulation.GetUVsArray();
 
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
 
             meshCollider.enabled = false;
             meshCollider.enabled = true;
-        }
-
-        private void AddTriangle(int offset, int vertex1, int vertex2, int vertex3)
-        {
-            triangles.Add(offset + vertex1);
-            triangles.Add(offset + vertex2);
-            triangles.Add(offset + vertex3);
-        }
-
-        private void AddQuad(Vector3 origin, Vector3 normal, int uvTileX, int uvTileY)
-        {
-            int count = vertices.Count;
-
-            if (normal == Vector3.forward)
-            {
-                vertices.Add(origin + new Vector3(0, 0, 0));
-                vertices.Add(origin + new Vector3(1, 0, 0));
-                vertices.Add(origin + new Vector3(1, 1, 0));
-                vertices.Add(origin + new Vector3(0, 1, 0));
-
-                AddTriangle(count, 2, 0, 1);
-                AddTriangle(count, 2, 3, 0);
-            }
-            else if (normal == Vector3.back)
-            {
-                vertices.Add(origin + new Vector3(0, 0, 0));
-                vertices.Add(origin + new Vector3(1, 0, 0));
-                vertices.Add(origin + new Vector3(1, 1, 0));
-                vertices.Add(origin + new Vector3(0, 1, 0));
-
-                AddTriangle(count, 2, 1, 0);
-                AddTriangle(count, 2, 0, 3);
-            }
-            else if (normal == Vector3.right)
-            {
-                vertices.Add(origin + new Vector3(0, 0, 0));
-                vertices.Add(origin + new Vector3(0, 0, 1));
-                vertices.Add(origin + new Vector3(0, 1, 1));
-                vertices.Add(origin + new Vector3(0, 1, 0));
-
-                AddTriangle(count, 3, 1, 0);
-                AddTriangle(count, 2, 1, 3);
-            }
-            else if (normal == Vector3.left)
-            {
-                vertices.Add(origin + new Vector3(0, 0, 0));
-                vertices.Add(origin + new Vector3(0, 0, 1));
-                vertices.Add(origin + new Vector3(0, 1, 1));
-                vertices.Add(origin + new Vector3(0, 1, 0));
-
-                AddTriangle(count, 3, 0, 1);
-                AddTriangle(count, 2, 3, 1);
-            }
-            else if (normal == Vector3.up)
-            {
-                vertices.Add(origin + new Vector3(0, 0, 0));
-                vertices.Add(origin + new Vector3(1, 0, 0));
-                vertices.Add(origin + new Vector3(1, 0, 1));
-                vertices.Add(origin + new Vector3(0, 0, 1));
-
-                AddTriangle(count, 0, 2, 1);
-                AddTriangle(count, 0, 3, 2);
-            }
-            else if (normal == Vector3.down)
-            {
-                vertices.Add(origin + new Vector3(0, 0, 0));
-                vertices.Add(origin + new Vector3(1, 0, 0));
-                vertices.Add(origin + new Vector3(1, 0, 1));
-                vertices.Add(origin + new Vector3(0, 0, 1));
-
-                AddTriangle(count, 0, 1, 2);
-                AddTriangle(count, 0, 2, 3);
-            }
-
-            uvs.Add(new Vector2(uvTileX / materialTextureWidth, uvTileY / materialTextureHeight));
-            uvs.Add(new Vector2(uvTileX / materialTextureWidth, uvTileY / materialTextureHeight));
-            uvs.Add(new Vector2((uvTileX + 1) / materialTextureWidth, (uvTileY + 1) / materialTextureHeight));
-            uvs.Add(new Vector2((uvTileX + 1)/ materialTextureWidth, (uvTileY + 1) / materialTextureHeight));
-        }
-
-        private void AddCubeQuads(Vector3 origin, Vector3[] faces, int uvTileX, int uvTileY)
-        {
-            foreach(var face in faces)
-            {
-                Vector3 offset = Vector3.zero;
-
-                if (face == Vector3.up || face == Vector3.right || face == Vector3.forward) offset = face;
-
-                AddQuad(origin + offset, face, uvTileX, uvTileY);
-            }
         }
 
         public void AddCube(int x, int y, int z, int uvTileX, int uvTileY)

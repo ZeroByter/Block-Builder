@@ -21,10 +21,11 @@ namespace ZeroByterGames.BlockBuilder.UI
 		{
 			Translate = 0,
 			Rotate = 1,
-			Create = 2,
-			Destroy = 3,
-			Paint = 4,
-			Colorpick = 5
+			Select = 2,
+			Create = 3,
+			Destroy = 4,
+			Paint = 5,
+			Colorpick = 6
 		}
 		private Tool currentTool = Tool.Create;
 
@@ -37,21 +38,22 @@ namespace ZeroByterGames.BlockBuilder.UI
 
 		private void Update()
 		{
+			int offset = 3;
 			if (Input.GetKeyDown(KeyCode.Alpha1))
 			{
-				SetCurrentTool(2);
+				SetCurrentTool(offset);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha2))
 			{
-				SetCurrentTool(3);
+				SetCurrentTool(offset + 1);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha3))
 			{
-				SetCurrentTool(4);
+				SetCurrentTool(offset + 2);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha4))
 			{
-				SetCurrentTool(5);
+				SetCurrentTool(offset + 3);
 			}
 		}
 

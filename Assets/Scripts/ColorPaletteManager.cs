@@ -22,6 +22,13 @@ namespace ZeroByterGames.BlockBuilder
 			return Singleton.paletteWidth;
 		}
 
+		public static int GetPaletteHeight()
+		{
+			if (Singleton == null) return 0;
+
+			return Singleton.paletteHeight;
+		}
+
 		public static Texture GetPaletteTexture()
 		{
 			if (Singleton == null) return null;
