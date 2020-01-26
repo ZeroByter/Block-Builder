@@ -18,6 +18,8 @@ namespace ZeroByterGames.BlockBuilder
 
 		private static void ExportObj(string path, Mesh mesh)
 		{
+			var meshName = Path.GetFileNameWithoutExtension(path).Replace(" ", "");
+
 			Vector3 minVertex = Vector3.positiveInfinity;
 			Vector3 maxVertex = Vector3.negativeInfinity;
 
@@ -35,9 +37,9 @@ namespace ZeroByterGames.BlockBuilder
 			string data = "";
 
 			data += $"mtllib ./{Path.GetFileNameWithoutExtension(path)}.mtl\n";
-			data += $"o test\n";
+			data += $"o {meshName}\n";
 			data += $"\n";
-			data += $"g test\n";
+			data += $"g {meshName}\n";
 			data += $"\n";
 
 			List<Vector3> distinctVertices = new List<Vector3>();
@@ -112,7 +114,7 @@ namespace ZeroByterGames.BlockBuilder
 			}
 
 			data += $"\n";
-			data += $"g\n";
+			data += $"g {meshName}\n";
 			data += $"usemtl DefaultColorPalette\n";
 			for (int i = 0; i < mesh.triangles.Length / 3; i++)
 			{

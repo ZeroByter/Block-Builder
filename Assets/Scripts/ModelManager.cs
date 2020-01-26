@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ZeroByterGames.BlockBuilder.UI;
+using static ZeroByterGames.BlockBuilder.SaveOpenManager.SaveData;
 
 namespace ZeroByterGames.BlockBuilder
 {
@@ -38,6 +39,26 @@ namespace ZeroByterGames.BlockBuilder
             return wholeMesh;
         }
 
+        public static List<BlockData> GetAllBlocks()
+        {
+            if (Singleton == null) return new List<BlockData>();
+
+            List<BlockData> blocks = new List<BlockData>();
+
+            foreach(var chunk in Singleton.chunks.Values)
+            {
+                blocks.AddRange(chunk.GetAllBlocks());
+            }
+            
+            return blocks;
+        }
+
+        /// <summary>
+        /// Creates a new block using the current closestColor
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
         public static void AddCube(int x, int y, int z)
         {
             if (Singleton == null) return;
@@ -57,6 +78,36 @@ namespace ZeroByterGames.BlockBuilder
 
             var closestColor = ColorpickerController.GetClosestColor();
             chunk.AddCube(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16), closestColor.x, closestColor.y);
+        }
+
+        /// <summary>
+        /// Creates a new block with a specified color value index
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <param name="color"></param>
+        public static void AddCube(int x, int y, int z, int color)
+        {
+            if (Singleton == null) return;
+
+            int chunkX = Mathf.FloorToInt(x / 16f);
+            int chunkY = Mathf.FloorToInt(y / 16f);
+            int chunkZ = Mathf.FloorToInt(z / 16f);
+            int chunkKey = Singleton.Vector3ToInt(chunkX, chunkY, chunkZ);
+
+            ChunkController chunk = Singleton.GetChunkByBlock(x, y, z);
+
+            if (chunk == null)
+            {
+                chunk = Singleton.CreateChunk(chunkX, chunkY, chunkZ);
+                Singleton.chunks.Add(chunkKey, chunk);
+            }
+
+            int paletteWidth = ColorPaletteManager.GetPaletteWidth();
+            int colorX = color % paletteWidth;
+            int colorY = Mathf.FloorToInt(color / paletteWidth);
+            chunk.AddCube(Mathf.Abs(x - chunkX * 16), Mathf.Abs(y - chunkY * 16), Mathf.Abs(z - chunkZ * 16), colorX, colorY);
         }
 
         public static void RemoveCube(int x, int y, int z)

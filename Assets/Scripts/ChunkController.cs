@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 using UnityEngine;
+using static ZeroByterGames.BlockBuilder.SaveOpenManager.SaveData;
 
 namespace ZeroByterGames.BlockBuilder {
     public class ChunkController : MonoBehaviour
@@ -187,7 +188,7 @@ namespace ZeroByterGames.BlockBuilder {
         {
             if (x < 0 || x >= modelData.GetLength(0) || y < 0 || y >= modelData.GetLength(1) || z < 0 || z >= modelData.GetLength(2)) return;
 
-            modelData[x, y, z] = uvTileX + uvTileX * ColorPaletteManager.GetPaletteWidth();
+            modelData[x, y, z] = uvTileX + uvTileY * ColorPaletteManager.GetPaletteWidth();
             cubesCount++;
 
             UpdateAdjacentChunk(x, y, z);
@@ -211,6 +212,25 @@ namespace ZeroByterGames.BlockBuilder {
             }
 
             UpdateMesh();
+        }
+
+        public List<BlockData> GetAllBlocks()
+        {
+            List<BlockData> blocks = new List<BlockData>();
+
+            for (int x = 0; x < modelData.GetLength(0); x++)
+            {
+                for (int y = 0; y < modelData.GetLength(1); y++)
+                {
+                    for (int z = 0; z < modelData.GetLength(2); z++)
+                    {
+                        int block = modelData[x, y, z];
+                        if (block > 0) blocks.Add(new BlockData(chunkPosition.x * 16 + x, chunkPosition.y * 16 + y, chunkPosition.z * 16 + z, block));
+                    }
+                }
+            }
+
+            return blocks;
         }
 
         private void UpdateAdjacentChunk(int x, int y, int z)

@@ -1,16 +1,19 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using ZeroByterGames.BlockBuilder.UI;
+using ZeroByterGames.BlockBuilder.UndoSystem;
 using static ZeroByterGames.BlockBuilder.UI.ToolbarController;
 
 namespace ZeroByterGames.BlockBuilder
 {
-	public class CameraController : MonoBehaviour
-	{
+    public class CameraController : MonoBehaviour
+    {
         new private Camera camera;
 
-        private float movementSpeed = 0.1f;
+        private float movementSpeed = 0.175f;
         private bool isLooking = false;
+
+        private float lastRapidTool;
 
         private void Awake()
         {
@@ -25,7 +28,25 @@ namespace ZeroByterGames.BlockBuilder
 
             if (currentTool == Tool.Create)
             {
-                if (Input.GetKeyDown(KeyCode.Mouse0))
+                if (Input.GetKey(KeyCode.Mouse0) && Input.GetKey(KeyCode.LeftShift) && Time.time - lastRapidTool > 0.15f)
+                {
+                    lastRapidTool = Time.time;
+
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
+
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / 2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / 2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / 2);
+
+                        ModelManager.AddCube(x, y, z);
+
+                        UndoManager.AddAction(new CreateBlockAction(x, y, z, ColorpickerController.GetClosestColor().GetAsIndex()));
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.Mouse0))
                 {
                     RaycastHit hit;
                     var ray = camera.ScreenPointToRay(Input.mousePosition);
@@ -37,6 +58,8 @@ namespace ZeroByterGames.BlockBuilder
                         int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / 2);
 
                         ModelManager.AddCube(x, y, z);
+
+                        UndoManager.AddAction(new CreateBlockAction(x, y, z, ColorpickerController.GetClosestColor().GetAsIndex()));
                     }
                     else
                     {
@@ -46,12 +69,36 @@ namespace ZeroByterGames.BlockBuilder
                         int z = Mathf.FloorToInt(point.z);
 
                         ModelManager.AddCube(x, y, z);
+
+                        UndoManager.AddAction(new CreateBlockAction(x, y, z, ColorpickerController.GetClosestColor().GetAsIndex()));
                     }
                 }
             }
             else if (currentTool == Tool.Destroy)
             {
-                if (Input.GetKeyDown(KeyCode.Mouse0))
+                if (Input.GetKey(KeyCode.Mouse0) && Input.GetKey(KeyCode.LeftShift) && Time.time - lastRapidTool > 0.15f)
+                {
+                    lastRapidTool = Time.time;
+
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
+
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        var cubePosition = hit.point;
+
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
+
+                        int color = ModelManager.GetCubeColor(x, y, z);
+                        ModelManager.RemoveCube(x, y, z);
+
+                        UndoManager.AddAction(new RemoveBlockAction(x, y, z, color));
+
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.Mouse0))
                 {
                     RaycastHit hit;
                     var ray = camera.ScreenPointToRay(Input.mousePosition);
@@ -64,7 +111,11 @@ namespace ZeroByterGames.BlockBuilder
                         int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
                         int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
 
+                        int color = ModelManager.GetCubeColor(x, y, z);
                         ModelManager.RemoveCube(x, y, z);
+
+                        UndoManager.AddAction(new RemoveBlockAction(x, y, z, color));
+
                     }
                 }
             }
@@ -83,7 +134,16 @@ namespace ZeroByterGames.BlockBuilder
                         int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
                         int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
 
-                        ModelManager.AddCube(x, y, z);
+                        int color = ModelManager.GetCubeColor(x, y, z);
+                        int colorpickerValue = ColorpickerController.GetClosestColor().GetAsIndex();
+
+                        if (color != colorpickerValue)
+                        {
+
+                            UndoManager.AddAction(new PaintBlockAction(x, y, z, color, ColorpickerController.GetClosestColor().GetAsIndex()));
+
+                            ModelManager.AddCube(x, y, z);
+                        }
                     }
                 }
             }
@@ -101,17 +161,17 @@ namespace ZeroByterGames.BlockBuilder
 
             if (Input.GetKeyDown(KeyCode.LeftShift))
             {
-                movementSpeed = 0.2f;
+                movementSpeed = 0.35f;
             }
             if (Input.GetKeyUp(KeyCode.LeftShift))
             {
-                movementSpeed = 0.1f;
+                movementSpeed = 0.175f;
             }
         }
 
         public void FixedUpdate()
         {
-            if(isLooking) DoLooking();
+            if (isLooking) DoLooking();
             DoMovement();
         }
 
@@ -146,5 +206,5 @@ namespace ZeroByterGames.BlockBuilder
 
             transform.position += transform.right * horizontal + transform.forward * vertical + transform.up * upDown;
         }
-	}
+    }
 }

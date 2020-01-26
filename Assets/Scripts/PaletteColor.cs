@@ -24,6 +24,11 @@ namespace ZeroByterGames.BlockBuilder
 			return new Color(r, g, b);
 		}
 
+		public int GetAsIndex()
+		{
+			return x + y * ColorPaletteManager.GetPaletteWidth();
+		}
+
 		public override bool Equals(object obj)
 		{
 			return obj is PaletteColor color &&
