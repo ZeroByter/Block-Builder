@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,6 +6,8 @@ namespace ZeroByterGames.BlockBuilder.UI
 {
 	public class ToolbarController : MonoBehaviour
 	{
+		public static Action<Tool> NewToolSelected;
+
 		private static ToolbarController Singleton;
 
 		public static Tool GetCurrentTool()
@@ -16,38 +19,47 @@ namespace ZeroByterGames.BlockBuilder.UI
 
 		public enum Tool
 		{
-			Create = 0,
-			Destroy = 1,
-			Paint = 2,
-			Colorpick = 3
+			Translate = 0,
+			Rotate = 1,
+			Create = 2,
+			Destroy = 3,
+			Paint = 4,
+			Colorpick = 5
 		}
-		private Tool currentTool;
+		private Tool currentTool = Tool.Create;
 
 		private void Awake()
 		{
 			Singleton = this;
 
-			UpdateSelectedTool();
+			UpdateUI();
 		}
 
 		private void Update()
 		{
 			if (Input.GetKeyDown(KeyCode.Alpha1))
 			{
-				SetCurrentTool(0);
+				SetCurrentTool(2);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha2))
 			{
-				SetCurrentTool(1);
+				SetCurrentTool(3);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha3))
 			{
-				SetCurrentTool(2);
+				SetCurrentTool(4);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha4))
 			{
-				SetCurrentTool(3);
+				SetCurrentTool(5);
 			}
+		}
+
+		private void UpdateUI()
+		{
+			UpdateSelectedTransformTool();
+
+			UpdateSelectedTool();
 		}
 
 		private void UpdateSelectedTool()
@@ -68,11 +80,33 @@ namespace ZeroByterGames.BlockBuilder.UI
 			}
 		}
 
+		private void UpdateSelectedTransformTool()
+		{
+			int index = -1;
+			foreach (Transform tool in transform)
+			{
+				index++;
+
+				if (index > 1) break;
+
+				if (index == 0) //translate
+				{
+					tool.GetComponent<Image>().color = Color.white;
+				}
+				else
+				{
+					tool.GetComponent<Image>().color = Color.black;
+				}
+			}
+		}
+
 		public void SetCurrentTool(int index)
 		{
 			currentTool = (Tool)index;
 
-			UpdateSelectedTool();
+			NewToolSelected?.Invoke(currentTool);
+
+			UpdateUI();
 		}
 	}
 }

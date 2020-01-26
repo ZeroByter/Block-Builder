@@ -1,0 +1,4 @@
+newmtl DefaultColorPalette
+map_Kd DefaultColorPalette.png
+Kd 1 1 1
+d 1

@@ -8,6 +8,15 @@ namespace ZeroByterGames.BlockBuilder
 {
     public class CameraController : MonoBehaviour
     {
+        private static CameraController Singleton;
+
+        public static Camera GetCamera()
+        {
+            if (Singleton == null) return null;
+
+            return Singleton.camera;
+        }
+
         new private Camera camera;
 
         private float movementSpeed = 0.175f;
@@ -17,6 +26,8 @@ namespace ZeroByterGames.BlockBuilder
 
         private void Awake()
         {
+            Singleton = this;
+
             camera = GetComponent<Camera>();
         }
 

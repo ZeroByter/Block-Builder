@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ZeroByterGames.BlockBuilder.TransformSystem
 {
-	public class ArrowController : MonoBehaviour
+	public class RingController : MonoBehaviour
 	{
 		public Vector3 normal;
 
@@ -10,10 +10,11 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 		private Color color;
 
-		private Plane plane;
 		private Transform parentTransform;
+		private Quaternion dragStartRotation;
 		private bool isDragging;
-		private Vector3 draggingStartPosition;
+		private float lastMouseX;
+		private float virtualRotationValue;
 
 		private void Awake()
 		{
@@ -28,23 +29,20 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 			parentTransform = transform.parent.parent.GetChild(2);
 
 			renderer.material.color = color * .6f;
-
-			plane = new Plane(Vector3.right, 2);
 		}
 
 		private void Update()
 		{
 			if (isDragging)
 			{
-				float enter;
-				var ray = CameraController.GetCamera().ScreenPointToRay(Input.mousePosition);
-				if(plane.Raycast(ray, out enter))
-				{
-					if (normal.x == 1) parentTransform.position = new Vector3(Mathf.Round(ray.GetPoint(enter).x), draggingStartPosition.y, draggingStartPosition.z);
-					if (normal.y == 1) parentTransform.position = new Vector3(draggingStartPosition.x, Mathf.Round(ray.GetPoint(enter).y), draggingStartPosition.z);
-					if (normal.z == 1) parentTransform.position = new Vector3(draggingStartPosition.x, draggingStartPosition.y, Mathf.Round(ray.GetPoint(enter).z));
-					plane.SetNormalAndPosition(transform.right, transform.position);
-				}
+				virtualRotationValue += Input.mousePosition.x - lastMouseX;
+
+				//parentTransform.rotation = dragStartRotation * Quaternion.Euler(0, 0, Mathf.Round(virtualRotationValue / 90) * 90);
+				if (normal.x == 1) parentTransform.rotation = dragStartRotation * Quaternion.Euler(-virtualRotationValue, 0, 0);
+				if (normal.y == 1) parentTransform.rotation = dragStartRotation * Quaternion.Euler(0, virtualRotationValue, 0);
+				if (normal.z == 1) parentTransform.rotation = dragStartRotation * Quaternion.Euler(0, 0, virtualRotationValue);
+
+				lastMouseX = Input.mousePosition.x;
 			}
 		}
 
@@ -61,7 +59,9 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 		private void OnMouseDown()
 		{
-			draggingStartPosition = transform.position;
+			virtualRotationValue = 0;
+			dragStartRotation = parentTransform.rotation;
+			lastMouseX = Input.mousePosition.x;
 			isDragging = true;
 		}
 
