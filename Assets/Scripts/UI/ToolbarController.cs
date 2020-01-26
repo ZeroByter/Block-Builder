@@ -25,7 +25,7 @@ namespace ZeroByterGames.BlockBuilder.UI
 			Create = 3,
 			Destroy = 4,
 			Paint = 5,
-			Colorpick = 6
+			Colorpicker = 6
 		}
 		private Tool currentTool = Tool.Create;
 

@@ -8,7 +8,7 @@ namespace ZeroByterGames.BlockBuilder
 	{
 		private static ColorPaletteManager Singleton;
 
-		public static HashSet<PaletteColor> GetPaletteColors()
+		public static PaletteColor[] GetPaletteColors()
 		{
 			if (Singleton == null) return null;
 
@@ -36,12 +36,19 @@ namespace ZeroByterGames.BlockBuilder
 			return Singleton.currentPalette.texture;
 		}
 
+		public static PaletteColor GetColorFromPalette(int x, int y)
+		{
+			if (Singleton == null) return null;
+
+			return Singleton.colors[x + y * Singleton.paletteWidth];
+		}
+
 		public Sprite currentPalette;
 
 		private int paletteWidth;
 		private int paletteHeight;
 
-		private HashSet<PaletteColor> colors = new HashSet<PaletteColor>();
+		private PaletteColor[] colors;
 
 		private void Awake()
 		{
@@ -52,14 +59,18 @@ namespace ZeroByterGames.BlockBuilder
 			paletteWidth = texture.width;
 			paletteHeight = texture.height;
 
+			HashSet<PaletteColor> uniqueColors = new HashSet<PaletteColor>();
+
 			for (int y = 0; y < texture.height; y++)
 			{
 				for (int x = 0; x < texture.width; x++)
 				{
 					var color = texture.GetPixel(x, y);
-					colors.Add(new PaletteColor(x, y, color.r, color.g, color.b));
+					uniqueColors.Add(new PaletteColor(x, y, color.r, color.g, color.b));
 				}
 			}
+
+			colors = uniqueColors.ToArray();
 		}
 	}
 }

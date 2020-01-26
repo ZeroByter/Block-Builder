@@ -96,8 +96,6 @@ namespace ZeroByterGames.BlockBuilder
 
                     if (Physics.Raycast(ray, out hit))
                     {
-                        var cubePosition = hit.point;
-
                         int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
                         int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
                         int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
@@ -116,8 +114,6 @@ namespace ZeroByterGames.BlockBuilder
 
                     if (Physics.Raycast(ray, out hit))
                     {
-                        var cubePosition = hit.point;
-
                         int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
                         int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
                         int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
@@ -139,8 +135,6 @@ namespace ZeroByterGames.BlockBuilder
 
                     if (Physics.Raycast(ray, out hit))
                     {
-                        var cubePosition = hit.point;
-
                         int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
                         int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
                         int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
@@ -155,6 +149,25 @@ namespace ZeroByterGames.BlockBuilder
 
                             ModelManager.AddCube(x, y, z);
                         }
+                    }
+                }
+            }
+            else if (currentTool == Tool.Colorpicker)
+            {
+                if (Input.GetKeyDown(KeyCode.Mouse0))
+                {
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
+
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
+
+                        int color = ModelManager.GetCubeColor(x, y, z);
+                        int paletteWidth = ColorPaletteManager.GetPaletteWidth();
+                        ColorpickerController.SetColor(color % paletteWidth, Mathf.FloorToInt(color / paletteWidth));
                     }
                 }
             }

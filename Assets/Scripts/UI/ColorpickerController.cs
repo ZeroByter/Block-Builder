@@ -13,6 +13,14 @@ namespace ZeroByterGames.BlockBuilder.UI {
 			return Singleton.closestColor;
 		}
 
+		public static void SetColor(int x, int y)
+		{
+			if (Singleton == null) return;
+
+			Singleton.closestColor = ColorPaletteManager.GetColorFromPalette(x, y);
+			Singleton.UpdateUI();
+		}
+
 		public Image colorPreview;
 
 		private float currentRed = 1;
@@ -28,33 +36,38 @@ namespace ZeroByterGames.BlockBuilder.UI {
 
 		private void Start()
 		{
-			UpdateUI();
+			FindClosestColorAndUpdateUI();
 		}
 
 		public void ChangedRed(float newValue)
 		{
 			currentRed = newValue;
 
-			UpdateUI();
+			FindClosestColorAndUpdateUI();
 		}
 
 		public void ChangedGreen(float newValue)
 		{
 			currentGreen = newValue;
 
-			UpdateUI();
+			FindClosestColorAndUpdateUI();
 		}
 
 		public void ChangedBlue(float newValue)
 		{
 			currentBlue = newValue;
 
+			FindClosestColorAndUpdateUI();
+		}
+
+		private void FindClosestColorAndUpdateUI()
+		{
+			closestColor = FindClosestColor();
 			UpdateUI();
 		}
 
 		private void UpdateUI()
 		{
-			closestColor = FindClosestColor();
 			colorPreview.color = closestColor.GetColor();
 		}
 

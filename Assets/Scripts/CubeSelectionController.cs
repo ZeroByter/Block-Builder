@@ -1,3 +1,4 @@
+using Facepunch;
 using System.Collections.Generic;
 using UnityEngine;
 using static ZeroByterGames.BlockBuilder.SaveOpenManager.SaveData;
@@ -34,14 +35,14 @@ namespace ZeroByterGames.BlockBuilder
 
         private void Start()
         {
+            Highlight.ClearAll();
+            Highlight.AddRenderer(meshRenderer);
+            Highlight.Rebuild();
+
             AddCube(0, 0, 0, 0, 0);
             AddCube(1, 0, 0, 0, 0);
             AddCube(2, 0, 0, 0, 0);
             AddCube(4, 1, 0, 0, 0);
-        }
-
-        private void OnEnable()
-        {
         }
 
         public void UpdateMesh()
