@@ -19,13 +19,11 @@ namespace ZeroByterGames.BlockBuilder.UI
 
 		public enum Tool
 		{
-			Translate = 0,
-			Rotate = 1,
-			Select = 2,
-			Create = 3,
-			Destroy = 4,
-			Paint = 5,
-			Colorpicker = 6
+			Select = 0,
+			Create = 1,
+			Destroy = 2,
+			Paint = 3,
+			Colorpicker = 4
 		}
 		private Tool currentTool = Tool.Create;
 
@@ -38,22 +36,21 @@ namespace ZeroByterGames.BlockBuilder.UI
 
 		private void Update()
 		{
-			int offset = 3;
 			if (Input.GetKeyDown(KeyCode.Alpha1))
 			{
-				SetCurrentTool(offset);
+				SetNewTool(Tool.Create);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha2))
 			{
-				SetCurrentTool(offset + 1);
+				SetNewTool(Tool.Destroy);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha3))
 			{
-				SetCurrentTool(offset + 2);
+				SetNewTool(Tool.Paint);
 			}
 			else if (Input.GetKeyDown(KeyCode.Alpha4))
 			{
-				SetCurrentTool(offset + 3);
+				SetNewTool(Tool.Colorpicker);
 			}
 		}
 
@@ -102,9 +99,14 @@ namespace ZeroByterGames.BlockBuilder.UI
 			}
 		}
 
-		public void SetCurrentTool(int index)
+		public void SetNewTool(int index)
 		{
-			currentTool = (Tool)index;
+			SetNewTool((Tool)index);
+		}
+
+		private void SetNewTool(Tool tool)
+		{
+			currentTool = tool;
 
 			NewToolSelected?.Invoke(currentTool);
 

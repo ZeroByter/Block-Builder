@@ -1,6 +1,9 @@
 using Facepunch;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using ZeroByterGames.BlockBuilder.TransformSystem;
 using static ZeroByterGames.BlockBuilder.SaveOpenManager.SaveData;
 
 namespace ZeroByterGames.BlockBuilder
@@ -9,10 +12,91 @@ namespace ZeroByterGames.BlockBuilder
 	{
 		private static CubeSelectionController Singleton;
 
+        public static bool DoesCubeExist(int x, int y, int z)
+        {
+            if (Singleton == null) return false;
+
+            x -= (int)Singleton.transform.position.x;
+            y -= (int)Singleton.transform.position.y;
+            z -= (int)Singleton.transform.position.z;
+
+            return Singleton.blocks.ContainsKey(Vector3ToInt(x, y, z));
+        }
+
+        public static void AddCube(int x, int y, int z, int color)
+        {
+            if (Singleton == null) return;
+
+            Singleton.blocks.Add(Vector3ToInt(x, y, z), new BlockData(x, y, z, color));
+
+            Singleton.UpdateMesh();
+        }
+
+        public static void RemoveCube(int x, int y, int z)
+        {
+            if (Singleton == null) return;
+
+            Singleton.blocks.Remove(Vector3ToInt(x, y, z));
+
+            Singleton.UpdateMesh();
+        }
+
+        public static BlockData[] GetAllCubes()
+        {
+            if (Singleton == null) return new BlockData[0];
+
+            return Singleton.blocks.Values.ToArray();
+        }
+
+        public static Vector3 GetPosition()
+        {
+            if (Singleton == null) return Vector3.zero;
+
+            return Singleton.transform.position;
+        }
+
+        public static void Clear()
+        {
+            if (Singleton == null) return;
+
+            Singleton.blocks.Clear();
+
+            Singleton.UpdateMesh();
+        }
+        
+        public static void ResetPosition()
+        {
+            if (Singleton == null) return;
+
+            Singleton.transform.position = Vector3.zero;
+
+            /*if (Singleton == null) return;
+
+            Dictionary<int, BlockData> blocks = new Dictionary<int, BlockData>();
+            var controllerPosition = Singleton.transform.position;
+
+            foreach (var cube in Singleton.blocks.Values)
+            {
+                int x = cube.x - (int)controllerPosition.x;
+                int y = cube.y - (int)controllerPosition.y;
+                int z = cube.z - (int)controllerPosition.z;
+
+                blocks[Vector3ToInt(x, y, z)] = new BlockData(x, y, z, cube.color);
+            }
+
+            Singleton.blocks = blocks;*/
+        }
+
+        public static int Vector3ToInt(int x, int y, int z)
+        {
+            return x * 16777216 + y * 4096 + z;
+        }
+
         public Material material;
 
 		private MeshFilter meshFilter;
 		private MeshRenderer meshRenderer;
+        private MeshCollider meshCollider;
 
 		private Mesh mesh;
 
@@ -26,23 +110,32 @@ namespace ZeroByterGames.BlockBuilder
 
 			meshFilter = gameObject.AddComponent<MeshFilter>();
 			meshRenderer = gameObject.AddComponent<MeshRenderer>();
+			meshCollider = gameObject.AddComponent<MeshCollider>();
             meshRenderer.material = material;
 
             mesh = new Mesh();
 
 			meshFilter.sharedMesh = mesh;
+            meshCollider.sharedMesh = mesh;
+
+            StartCoroutine(AddToHighlight());
         }
 
-        private void Start()
+        private void Update()
         {
+            if(blocks.Count > 0)
+            {
+                TransformController.SetToolsPosition(meshCollider.bounds.center);
+            }
+        }
+
+        private IEnumerator AddToHighlight()
+        {
+            yield return new WaitForEndOfFrame();
+
             Highlight.ClearAll();
             Highlight.AddRenderer(meshRenderer);
-            Highlight.Rebuild();
-
-            AddCube(0, 0, 0, 0, 0);
-            AddCube(1, 0, 0, 0, 0);
-            AddCube(2, 0, 0, 0, 0);
-            AddCube(4, 1, 0, 0, 0);
+            Highlight.Rebuild(true);
         }
 
         public void UpdateMesh()
@@ -50,11 +143,13 @@ namespace ZeroByterGames.BlockBuilder
             mesh.Clear();
             meshManipulation.Clear();
 
-            foreach(var blockData in blocks.Values)
+            var controllerPosition = transform.position;
+
+            foreach (var blockData in blocks.Values)
             {
-                int x = blockData.x;
-                int y = blockData.y;
-                int z = blockData.z;
+                int x = blockData.x - (int)controllerPosition.x;
+                int y = blockData.y - (int)controllerPosition.y;
+                int z = blockData.z - (int)controllerPosition.z;
 
                 List<Vector3> faces = new List<Vector3>();
 
@@ -66,9 +161,8 @@ namespace ZeroByterGames.BlockBuilder
                 if (!DoesCubeExist(x, y - 1, z)) faces.Add(Vector3.down);
 
                 int paletteWidth = ColorPaletteManager.GetPaletteWidth();
-                int uvY = Mathf.FloorToInt(blockData.color / (float)paletteWidth);
 
-                meshManipulation.AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), blockData.color % paletteWidth, uvY);
+                meshManipulation.AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), blockData.color % paletteWidth, Mathf.FloorToInt(blockData.color / (float)paletteWidth) + 1);
             }
 
             mesh.vertices = meshManipulation.GetVerticesArray();
@@ -77,23 +171,9 @@ namespace ZeroByterGames.BlockBuilder
 
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
-        }
 
-        private bool DoesCubeExist(int x, int y, int z)
-        {
-            return blocks.ContainsKey(Vector3ToInt(x, y, z));
-        }
-
-        private void AddCube(int x, int y, int z, int colorTileX, int colorTileY)
-        {
-            blocks.Add(Vector3ToInt(x, y, z), new BlockData(x, y, z, colorTileX + colorTileY * ColorPaletteManager.GetPaletteWidth()));
-
-            UpdateMesh();
-        }
-
-        private int Vector3ToInt(int x, int y, int z)
-        {
-            return x * 16777216 + y * 4096 + z;
+            meshCollider.enabled = false;
+            meshCollider.enabled = true;
         }
     }
 }

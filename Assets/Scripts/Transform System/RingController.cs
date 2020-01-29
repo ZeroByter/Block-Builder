@@ -49,12 +49,14 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 		private void OnMouseEnter()
 		{
 			renderer.material.color = color;
+			TransformController.AddSelectedTranformComponents();
 		}
 
 		private void OnMouseExit()
 		{
 			if (isDragging) return;
 			renderer.material.color = color * .6f;
+			TransformController.MinusSelectedTranformComponents();
 		}
 
 		private void OnMouseDown()
@@ -67,6 +69,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 		private void OnMouseUp()
 		{
+			if (isDragging) TransformController.MinusSelectedTranformComponents();
 			isDragging = false;
 			renderer.material.color = color * .6f;
 		}

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using ZeroByterGames.BlockBuilder.TransformSystem;
 using ZeroByterGames.BlockBuilder.UI;
 using ZeroByterGames.BlockBuilder.UndoSystem;
 using static ZeroByterGames.BlockBuilder.UI.ToolbarController;
@@ -29,6 +30,8 @@ namespace ZeroByterGames.BlockBuilder
             Singleton = this;
 
             camera = GetComponent<Camera>();
+
+            ToolbarController.NewToolSelected += OnNewToolSelected;
         }
 
         private void Update()
@@ -37,7 +40,48 @@ namespace ZeroByterGames.BlockBuilder
 
             var currentTool = GetCurrentTool();
 
-            if (currentTool == Tool.Create)
+            if (currentTool == Tool.Select)
+            {
+                if (Input.GetKeyDown(KeyCode.Mouse0))
+                {
+                    RaycastHit hit;
+                    var ray = camera.ScreenPointToRay(Input.mousePosition);
+
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        int x = Mathf.FloorToInt(hit.point.x + hit.normal.x / -2);
+                        int y = Mathf.FloorToInt(hit.point.y + hit.normal.y / -2);
+                        int z = Mathf.FloorToInt(hit.point.z + hit.normal.z / -2);
+
+                        if (ModelManager.GetCube(x, y, z) && !CubeSelectionController.DoesCubeExist(x, y, z) && TransformController.GetSelectedTranformComponents() == 0)
+                        {
+                            int color = ModelManager.GetCubeColor(x, y, z);
+
+                            //CubeSelectionController.ResetCubePositions();
+                            CubeSelectionController.AddCube(x, y, z, color);
+
+                            ModelManager.RemoveCube(x, y, z);
+
+                            TransformController.UpdateVisibleTools();
+                        }
+                    }
+                    else
+                    {
+                        var controllerPosition = CubeSelectionController.GetPosition();
+                        foreach (var cube in CubeSelectionController.GetAllCubes())
+                        {
+                            ModelManager.AddCube(cube.x + (int)controllerPosition.x, cube.y + (int)controllerPosition.y, cube.z + (int)controllerPosition.z, cube.color);
+                        }
+
+                        CubeSelectionController.Clear();
+
+                        CubeSelectionController.ResetPosition();
+
+                        TransformController.UpdateVisibleTools();
+                    }
+                }
+            }
+            else if (currentTool == Tool.Create)
             {
                 if (Input.GetKey(KeyCode.Mouse0) && Input.GetKey(KeyCode.LeftShift) && Time.time - lastRapidTool > 0.15f)
                 {
@@ -144,7 +188,6 @@ namespace ZeroByterGames.BlockBuilder
 
                         if (color != colorpickerValue)
                         {
-
                             UndoManager.AddAction(new PaintBlockAction(x, y, z, color, ColorpickerController.GetClosestColor().GetAsIndex()));
 
                             ModelManager.AddCube(x, y, z);
@@ -197,6 +240,20 @@ namespace ZeroByterGames.BlockBuilder
         {
             if (isLooking) DoLooking();
             DoMovement();
+        }
+
+        private void OnNewToolSelected(Tool newTool)
+        {
+            if(newTool != Tool.Select)
+            {
+                //Remove selected cubes when not in selection tool
+                foreach (var cube in CubeSelectionController.GetAllCubes())
+                {
+                    ModelManager.AddCube(cube.x, cube.y, cube.z, cube.color);
+                }
+
+                CubeSelectionController.Clear();
+            }
         }
 
         private void DoLooking()

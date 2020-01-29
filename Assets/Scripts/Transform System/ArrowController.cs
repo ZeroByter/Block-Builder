@@ -13,7 +13,8 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 		private Plane plane;
 		private Transform parentTransform;
 		private bool isDragging;
-		private Vector3 draggingStartPosition;
+		private Vector3 dragStartPosition;
+		private Vector3 dragStartRayPoint;
 
 		private void Awake()
 		{
@@ -29,14 +30,14 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 			renderer.material.color = color * .6f;
 
-			plane = new Plane(Vector3.right, 2);
+			plane = new Plane(Vector3.right, 1);
 		}
 
 		private void Update()
 		{
 			if (isDragging)
 			{
-				float enter;
+				/*float enter;
 				var ray = CameraController.GetCamera().ScreenPointToRay(Input.mousePosition);
 				if(plane.Raycast(ray, out enter))
 				{
@@ -44,31 +45,58 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 					if (normal.y == 1) parentTransform.position = new Vector3(draggingStartPosition.x, Mathf.Round(ray.GetPoint(enter).y), draggingStartPosition.z);
 					if (normal.z == 1) parentTransform.position = new Vector3(draggingStartPosition.x, draggingStartPosition.y, Mathf.Round(ray.GetPoint(enter).z));
 					plane.SetNormalAndPosition(transform.right, transform.position);
-				}
+				}*/
+
+				if (normal.x == 1) parentTransform.position = dragStartPosition + new Vector3(Mathf.Round(GetPlaneRayPoint().x - dragStartRayPoint.x), 0, 0);
+				if (normal.y == 1) parentTransform.position = dragStartPosition + new Vector3(0, Mathf.Round(GetPlaneRayPoint().y - dragStartRayPoint.y), 0);
+				if (normal.z == 1) parentTransform.position = dragStartPosition + new Vector3(0, 0, Mathf.Round(GetPlaneRayPoint().z - dragStartRayPoint.z));
+				//if (normal.y == 1) parentTransform.position = new Vector3(dragStartPosition.x, Mathf.Round(GetPlaneRayPoint().y - dragStartRayPoint.y) + dragStartPosition.y, dragStartPosition.z);
 			}
 		}
 
 		private void OnMouseEnter()
 		{
 			renderer.material.color = color;
+			TransformController.AddSelectedTranformComponents();
 		}
 
 		private void OnMouseExit()
 		{
+			TransformController.MinusSelectedTranformComponents();
 			if (isDragging) return;
 			renderer.material.color = color * .6f;
 		}
 
 		private void OnMouseDown()
 		{
-			draggingStartPosition = transform.position;
+			plane.SetNormalAndPosition(transform.right, transform.position);
+			dragStartPosition = parentTransform.position;
+			dragStartRayPoint = GetPlaneRayPoint();
 			isDragging = true;
 		}
 
 		private void OnMouseUp()
 		{
+			//if (isDragging) TransformController.MinusSelectedTranformComponents();
 			isDragging = false;
 			renderer.material.color = color * .6f;
+		}
+
+		private void OnDisable()
+		{
+			//TransformController.MinusSelectedTranformComponents();
+		}
+
+		private Vector3 GetPlaneRayPoint()
+		{
+			float enter;
+			var ray = CameraController.GetCamera().ScreenPointToRay(Input.mousePosition);
+			if (!plane.Raycast(ray, out enter))
+			{
+				return Vector3.zero;
+			}
+
+			return ray.GetPoint(enter);
 		}
 	}
 }
