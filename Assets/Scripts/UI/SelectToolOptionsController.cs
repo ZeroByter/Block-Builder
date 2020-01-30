@@ -21,7 +21,8 @@ namespace ZeroByterGames.BlockBuilder.UI
 		public enum SelectTool
 		{
 			Translate = 0,
-			Rotate = 1
+			Rotate = 1,
+			Scale = 2
 		}
 		private SelectTool currentTool;
 

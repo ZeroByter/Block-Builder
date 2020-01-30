@@ -10,6 +10,8 @@ namespace ZeroByterGames.BlockBuilder
 	{
 		public static void Export(string path, Mesh mesh)
 		{
+			mesh.Optimize();
+
 			if (path.EndsWith(".obj"))
 			{
 				ExportObj(path, mesh);

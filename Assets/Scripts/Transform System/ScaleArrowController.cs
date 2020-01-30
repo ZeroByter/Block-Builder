@@ -1,8 +1,7 @@
 using UnityEngine;
 
-namespace ZeroByterGames.BlockBuilder.TransformSystem
-{
-	public class ArrowController : MonoBehaviour
+namespace ZeroByterGames.BlockBuilder.TransformSystem {
+	public class ScaleArrowController : MonoBehaviour
 	{
 		public Vector3 normal;
 
@@ -13,7 +12,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 		private Plane plane;
 		private Transform parentTransform;
 		private bool isDragging;
-		private Vector3 dragStartPosition;
+		private Vector3 dragStartScale;
 		private Vector3 dragStartRayPoint;
 
 		private void Awake()
@@ -37,9 +36,9 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 		{
 			if (isDragging)
 			{
-				if (normal.x == 1) parentTransform.position = dragStartPosition + new Vector3(Mathf.Round(GetPlaneRayPoint().x - dragStartRayPoint.x), 0, 0);
-				if (normal.y == 1) parentTransform.position = dragStartPosition + new Vector3(0, Mathf.Round(GetPlaneRayPoint().y - dragStartRayPoint.y), 0);
-				if (normal.z == 1) parentTransform.position = dragStartPosition + new Vector3(0, 0, Mathf.Round(GetPlaneRayPoint().z - dragStartRayPoint.z));
+				if (normal.x == 1) parentTransform.localScale = dragStartScale + new Vector3(Mathf.Round(GetPlaneRayPoint().x - dragStartRayPoint.x), 0, 0);
+				if (normal.y == 1) parentTransform.localScale = dragStartScale + new Vector3(0, Mathf.Round(GetPlaneRayPoint().y - dragStartRayPoint.y), 0);
+				if (normal.z == 1) parentTransform.localScale = dragStartScale + new Vector3(0, 0, Mathf.Round(GetPlaneRayPoint().z - dragStartRayPoint.z));
 			}
 		}
 
@@ -59,7 +58,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 		private void OnMouseDown()
 		{
 			plane.SetNormalAndPosition(transform.right, transform.position);
-			dragStartPosition = parentTransform.position;
+			dragStartScale = parentTransform.localScale;
 			dragStartRayPoint = GetPlaneRayPoint();
 			isDragging = true;
 		}

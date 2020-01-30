@@ -18,6 +18,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 			Singleton.translateParent.SetActive(tool == Tool.Select && selectTool == SelectToolOptionsController.SelectTool.Translate && CubeSelectionController.GetAllCubes().Length > 0);
 			Singleton.rotateParent.SetActive(tool == Tool.Select && selectTool == SelectToolOptionsController.SelectTool.Rotate && CubeSelectionController.GetAllCubes().Length > 0);
+			Singleton.scaleParent.SetActive(tool == Tool.Select && selectTool == SelectToolOptionsController.SelectTool.Scale && CubeSelectionController.GetAllCubes().Length > 0);
 		}
 
 		public static void SetToolsPosition(Vector3 position)
@@ -26,6 +27,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 			Singleton.translateParent.transform.position = position;
 			Singleton.rotateParent.transform.position = position;
+			Singleton.scaleParent.transform.position = position;
 		}
 
 		public static void AddSelectedTranformComponents()
@@ -51,6 +53,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 		private GameObject translateParent;
 		private GameObject rotateParent;
+		private GameObject scaleParent;
 
 		private int selectedTranformComponents;
 
@@ -60,9 +63,11 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 			translateParent = transform.GetChild(0).gameObject;
 			rotateParent = transform.GetChild(1).gameObject;
+			scaleParent = transform.GetChild(2).gameObject;
 
 			translateParent.SetActive(false);
 			rotateParent.SetActive(false);
+			scaleParent.SetActive(false);
 
 			ToolbarController.NewToolSelected += OnNewToolSelected;
 			SelectToolOptionsController.NewSelectTool += OnNewSelectTool;

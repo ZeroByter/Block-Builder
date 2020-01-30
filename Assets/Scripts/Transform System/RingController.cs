@@ -26,7 +26,7 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 			if (normal == Vector3.up) color = Color.green;
 
 			transform.forward = normal;
-			parentTransform = transform.parent.parent.GetChild(2);
+			parentTransform = transform.parent.parent.GetChild(3);
 
 			renderer.material.color = color * .6f;
 		}
