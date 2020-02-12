@@ -80,6 +80,8 @@ namespace ZeroByterGames.BlockBuilder
 			cubes[1, 0, 0] = new Cube();
 			cubes[2, 2, 0] = new Cube();
 
+			cubes[1, 2, 1] = new Cube();
+
 			UpdateMesh();
 		}
 
@@ -89,40 +91,51 @@ namespace ZeroByterGames.BlockBuilder
 			vertices.Clear();
 			triangles.Clear();
 
-			int z = 0;
-
 			for (int y = 0; y < 16; y++)
 			{
 				for (int x = 0; x < 16; x++)
 				{
-					var side = GetCubeSide(x, y, z, Up);
-
-					if (side != null)
+					for (int z = 0; z < 16; z++)
 					{
-						var facingSide = GetFacingCubeSide(x, y, z, Up);
+						var side = GetCubeSide(x, y, z, Up);
 
-						if(facingSide == null)
+						if (side != null)
 						{
-							int count = vertices.Count;
+							var facingSide = GetFacingCubeSide(x, z, y, Up);
 
-							vertices.Add(new Vector3(x, y + 1, z));
-							vertices.Add(new Vector3(x + 1, y + 1, z));
-							vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-							vertices.Add(new Vector3(x, y + 1, z + 1));
+							if (facingSide == null)
+							{
+								int count = vertices.Count;
 
-							//TODO: Implemented culling, now need to figure out how to implement greedy!
+								int[] biggestRectangle = GetBiggestRectangle(x, y, z, Up);
 
-							//Idea:
-							//Loop through X until cube is null
-							//In each X we loop to, check if there if we can also expand 'up' (y + 1). If we can't in even just one X loop, then dont add 'height' to rectangle
-							//If we can expand 'up', then do the same X loop thing but with Y++, if not, that's our final rectangle.
+								vertices.Add(new Vector3(x, y + 1, z));
+								vertices.Add(new Vector3(x + biggestRectangle[0], y + 1, z));
+								vertices.Add(new Vector3(x + biggestRectangle[0], y + 1, z + biggestRectangle[1]));
+								vertices.Add(new Vector3(x, y + 1, z + biggestRectangle[1]));
 
-							triangles.Add(count + 2);
-							triangles.Add(count + 1);
-							triangles.Add(count + 0);
-							triangles.Add(count + 3);
-							triangles.Add(count + 2);
-							triangles.Add(count + 0);
+								triangles.Add(count + 2);
+								triangles.Add(count + 1);
+								triangles.Add(count + 0);
+								triangles.Add(count + 3);
+								triangles.Add(count + 2);
+								triangles.Add(count + 0);
+
+								x += biggestRectangle[0];
+								z += biggestRectangle[1];
+
+								/*vertices.Add(new Vector3(x, y + 1, z));
+								vertices.Add(new Vector3(x + 1, y + 1, z));
+								vertices.Add(new Vector3(x + 1, y + 1, z + 1));
+								vertices.Add(new Vector3(x, y + 1, z + 1));
+
+								triangles.Add(count + 2);
+								triangles.Add(count + 1);
+								triangles.Add(count + 0);
+								triangles.Add(count + 3);
+								triangles.Add(count + 2);
+								triangles.Add(count + 0);*/
+							}
 						}
 					}
 				}
@@ -132,6 +145,35 @@ namespace ZeroByterGames.BlockBuilder
 			mesh.triangles = triangles.ToArray();
 
 			mesh.RecalculateNormals();
+		}
+
+		private int[] GetBiggestRectangle(int startX, int startY, int startZ, int side)
+		{
+			var array = new int[2];
+
+			array[1]++;
+
+			for (int y = startY; y < 16 - startY; y++)
+			{
+				for (int z = startZ; z < 16 - startZ; z++)
+				{
+					for (int x = startX; x < 16 - startX; x++)
+					{
+						//idk man this doesnt work but were close!
+						//if (GetCubeSide(x, y, z + 1, side) == null) expandZ = false;
+						//if (GetCubeSide(x, y, z, side) == null) break;
+
+						//TODO: Implemented culling, now need to figure out how to implement greedy!
+
+						//Idea:
+						//Loop through X until cube is null
+						//In each X we loop to, check if there if we can also expand 'up' (y + 1). If we can't in even just one X loop, then dont add 'height' to rectangle
+						//If we can expand 'up', then do the same X loop thing but with Y++, if not, that's our final rectangle.
+					}
+				}
+			}
+
+			return array;
 		}
 
 		private bool IsInChunk(int x, int y, int z)
