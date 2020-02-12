@@ -15,12 +15,12 @@ namespace ZeroByterGames.BlockBuilder.UndoSystem
 
 		public override void RedoAction()
 		{
-			ModelManager.AddCube(x, y, z, newColor);
+			//ModelManager.AddCube(x, y, z, newColor);
 		}
 
 		public override void ReverseAction()
 		{
-			ModelManager.AddCube(x, y, z, previousColor);
+			//ModelManager.AddCube(x, y, z, previousColor);
 		}
 	}
 }

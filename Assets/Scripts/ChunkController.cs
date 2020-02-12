@@ -1,200 +1,185 @@
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
-using static ZeroByterGames.BlockBuilder.SaveOpenManager.SaveData;
 
-namespace ZeroByterGames.BlockBuilder {
-    public class ChunkController : MonoBehaviour
-    {
-        private MeshFilter meshFilter;
-        private MeshRenderer meshRenderer;
-        private MeshCollider meshCollider;
+namespace ZeroByterGames.BlockBuilder
+{
+	public class ChunkController : MonoBehaviour
+	{
+		//https://github.com/roboleary/GreedyMesh/blob/master/src/mygame/Main.java
 
-        private Mesh mesh;
+		private const int Forward = 0;
+		private const int Right = 1;
+		private const int Backward = 2;
+		private const int Left = 3;
+		private const int Up = 4;
+		private const int Down = 5;
 
-        private MeshManipulationUtilities meshManipulation = new MeshManipulationUtilities();
+		public class Cube
+		{
+			public class Side
+			{
+				public Color color = Color.white;
+				public bool Transparent {
+					get {
+						return color.a != 1;
+					}
+				}
 
-        private int[,,] modelData = new int[16, 16, 16];
-        public int cubesCount;
+				public override bool Equals(object obj)
+				{
+					return obj is Side side &&
+						   color.Equals(side.color) &&
+						   Transparent == side.Transparent;
+				}
 
-        private Vector3Int chunkPosition;
+				public override int GetHashCode()
+				{
+					var hashCode = -511261207;
+					hashCode = hashCode * -1521134295 + color.GetHashCode();
+					hashCode = hashCode * -1521134295 + Transparent.GetHashCode();
+					return hashCode;
+				}
+			}
 
-        private void Awake()
-        {
-            meshFilter = gameObject.AddComponent<MeshFilter>();
-            meshRenderer = gameObject.AddComponent<MeshRenderer>();
-            meshCollider = gameObject.AddComponent<MeshCollider>();
+			public Side[] sides = new Side[6];
 
-            mesh = new Mesh();
-            meshFilter.sharedMesh = mesh;
-            meshCollider.sharedMesh = mesh;
+			public Cube()
+			{
+				for (int i = 0; i < 6; i++)
+				{
+					sides[i] = new Side();
+				}
+			}
+		}
 
-            var pos = transform.position;
-            chunkPosition = new Vector3Int((int)pos.x / 16, (int)pos.y / 16, (int)pos.z / 16);
-        }
+		private MeshFilter meshFilter;
+		private MeshRenderer meshRenderer;
+		private MeshCollider meshCollider;
 
-        public void SetMaterial(Material material)
-        {
-            meshRenderer.material = material;
-        }
+		private Mesh mesh;
 
-        public Mesh GetMesh()
-        {
-            return mesh;
-        }
+		private List<Vector3> vertices = new List<Vector3>();
+		private List<int> triangles = new List<int>();
 
-        public void UpdateMesh()
-        {
-            mesh.Clear();
-            meshManipulation.Clear();
+		private Cube[,,] cubes = new Cube[16, 16, 16];
 
-            for (int x = 0; x < modelData.GetLength(0); x++)
-            {
-                for (int y = 0; y < modelData.GetLength(1); y++)
-                {
-                    for (int z = 0; z < modelData.GetLength(2); z++)
-                    {
-                        if (!DoesCubeExist(x, y, z)) continue;
+		private void Awake()
+		{
+			meshFilter = gameObject.AddComponent<MeshFilter>();
+			meshRenderer = gameObject.AddComponent<MeshRenderer>();
+			meshCollider = gameObject.AddComponent<MeshCollider>();
 
-                        List<Vector3> faces = new List<Vector3>();
+			mesh = new Mesh();
+			meshFilter.sharedMesh = mesh;
+			meshRenderer.material = new Material(Shader.Find("Diffuse"));
+			meshCollider.sharedMesh = mesh;
 
-                        if (!DoesCubeExist(x, y, z + 1)) faces.Add(Vector3.forward);
-                        if (!DoesCubeExist(x, y, z - 1)) faces.Add(Vector3.back);
-                        if (!DoesCubeExist(x + 1, y, z)) faces.Add(Vector3.right);
-                        if (!DoesCubeExist(x - 1, y, z)) faces.Add(Vector3.left);
-                        if (!DoesCubeExist(x, y + 1, z)) faces.Add(Vector3.up);
-                        if (!DoesCubeExist(x, y - 1, z)) faces.Add(Vector3.down);
+			cubes[0, 2, 0] = new Cube();
+			cubes[1, 2, 0] = new Cube();
+			cubes[1, 1, 0] = new Cube();
+			cubes[1, 0, 0] = new Cube();
+			cubes[2, 2, 0] = new Cube();
 
-                        var colorValue = modelData[x, y, z];
-                        int paletteWidth = ColorPaletteManager.GetPaletteWidth();
-                        int uvY = Mathf.FloorToInt(colorValue / (float)paletteWidth);
+			UpdateMesh();
+		}
 
-                        meshManipulation.AddCubeQuads(new Vector3(x, y, z), faces.ToArray(), colorValue % paletteWidth, uvY);
-                    }
-                }
-            }
+		private void UpdateMesh()
+		{
+			mesh.Clear();
+			vertices.Clear();
+			triangles.Clear();
 
-            mesh.vertices = meshManipulation.GetVerticesArray();
-            mesh.SetTriangles(meshManipulation.GetTrianglesArray(), 0);
-            mesh.uv = meshManipulation.GetUVsArray();
+			int z = 0;
 
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
+			for (int y = 0; y < 16; y++)
+			{
+				for (int x = 0; x < 16; x++)
+				{
+					var side = GetCubeSide(x, y, z, Up);
 
-            meshCollider.enabled = false;
-            meshCollider.enabled = true;
-        }
+					if (side != null)
+					{
+						var facingSide = GetFacingCubeSide(x, y, z, Up);
 
-        public void AddCube(int x, int y, int z, int uvTileX, int uvTileY)
-        {
-            if (x < 0 || x >= modelData.GetLength(0) || y < 0 || y >= modelData.GetLength(1) || z < 0 || z >= modelData.GetLength(2)) return;
+						if(facingSide == null)
+						{
+							int count = vertices.Count;
 
-            modelData[x, y, z] = uvTileX + uvTileY * ColorPaletteManager.GetPaletteWidth();
-            cubesCount++;
+							vertices.Add(new Vector3(x, y + 1, z));
+							vertices.Add(new Vector3(x + 1, y + 1, z));
+							vertices.Add(new Vector3(x + 1, y + 1, z + 1));
+							vertices.Add(new Vector3(x, y + 1, z + 1));
 
-            UpdateAdjacentChunk(x, y, z);
+							//TODO: Implemented culling, now need to figure out how to implement greedy!
 
-            UpdateMesh();
-        }
+							//Idea:
+							//Loop through X until cube is null
+							//In each X we loop to, check if there if we can also expand 'up' (y + 1). If we can't in even just one X loop, then dont add 'height' to rectangle
+							//If we can expand 'up', then do the same X loop thing but with Y++, if not, that's our final rectangle.
 
-        public void RemoveCube(int x, int y, int z)
-        {
-            if (x < 0 || x >= modelData.GetLength(0) || y < 0 || y >= modelData.GetLength(1) || z < 0 || z >= modelData.GetLength(2)) return;
+							triangles.Add(count + 2);
+							triangles.Add(count + 1);
+							triangles.Add(count + 0);
+							triangles.Add(count + 3);
+							triangles.Add(count + 2);
+							triangles.Add(count + 0);
+						}
+					}
+				}
+			}
 
-            modelData[x, y, z] = 0;
-            cubesCount--;
+			mesh.vertices = vertices.ToArray();
+			mesh.triangles = triangles.ToArray();
 
-            UpdateAdjacentChunk(x, y, z);
+			mesh.RecalculateNormals();
+		}
 
-            if(cubesCount <= 0)
-            {
-                ModelManager.RemoveChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z);
-                return;
-            }
+		private bool IsInChunk(int x, int y, int z)
+		{
+			if (x < 0 || x > 15) return false;
+			if (y < 0 || y > 15) return false;
+			if (z < 0 || z > 15) return false;
 
-            UpdateMesh();
-        }
+			return true;
+		}
 
-        public List<BlockData> GetAllBlocks()
-        {
-            List<BlockData> blocks = new List<BlockData>();
+		private Cube.Side GetCubeSide(int x, int y, int z, int side)
+		{
+			if (!IsInChunk(x, y, z)) return null; //TODO: get cube in adjacent chunk instead of null
+			if (side < 0 || side > 5) return null;
 
-            for (int x = 0; x < modelData.GetLength(0); x++)
-            {
-                for (int y = 0; y < modelData.GetLength(1); y++)
-                {
-                    for (int z = 0; z < modelData.GetLength(2); z++)
-                    {
-                        int block = modelData[x, y, z];
-                        if (block > 0) blocks.Add(new BlockData(chunkPosition.x * 16 + x, chunkPosition.y * 16 + y, chunkPosition.z * 16 + z, block));
-                    }
-                }
-            }
+			var cube = cubes[x, y, z];
+			if (cube == null) return null;
 
-            return blocks;
-        }
+			return cubes[x, y, z].sides[side];
+		}
 
-        private void UpdateAdjacentChunk(int x, int y, int z)
-        {
-            //If we are on the edge of the chunk, update the nearby chunk
-            if (x < 1) ModelManager.UpdateChunk(chunkPosition.x - 1, chunkPosition.y, chunkPosition.z);
-            if (x >= modelData.GetLength(0) - 1) ModelManager.UpdateChunk(chunkPosition.x + 1, chunkPosition.y, chunkPosition.z);
-            if (y < 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y - 1, chunkPosition.z);
-            if (y >= modelData.GetLength(1) - 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y + 1, chunkPosition.z);
-            if (z < 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z - 1);
-            if (z >= modelData.GetLength(2) - 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z + 1);
-        }
-
-        public bool DoesCubeExist(int x, int y, int z)
-        {
-            if (x < 0 || y < 0 || z < 0) return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
-            if (x >= modelData.GetLength(0) || y >= modelData.GetLength(1) || z >= modelData.GetLength(2))
-            {
-                return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
-            }
-
-            return modelData[x, y, z] > 0;
-        }
-
-        public int GetCubeColor(int x, int y, int z)
-        {
-            if (x < 0 || y < 0 || z < 0) return ModelManager.GetCubeColor(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
-            if (x >= modelData.GetLength(0) || y >= modelData.GetLength(1) || z >= modelData.GetLength(2)) return ModelManager.GetCubeColor(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z));
-
-            return modelData[x, y, z];
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            Debug.DrawLine(transform.position + new Vector3(0, 0, 0), transform.position + new Vector3(16, 0, 0));
-            Debug.DrawLine(transform.position + new Vector3(0, 0, 16), transform.position + new Vector3(16, 0, 16));
-            Debug.DrawLine(transform.position + new Vector3(0, 0, 0), transform.position + new Vector3(0, 0, 16));
-            Debug.DrawLine(transform.position + new Vector3(16, 0, 0), transform.position + new Vector3(16, 0, 16));
-            Debug.DrawLine(transform.position + new Vector3(0, 16, 0), transform.position + new Vector3(16, 16, 0));
-            Debug.DrawLine(transform.position + new Vector3(0, 16, 16), transform.position + new Vector3(16, 16, 16));
-            Debug.DrawLine(transform.position + new Vector3(0, 16, 0), transform.position + new Vector3(0, 16, 16));
-            Debug.DrawLine(transform.position + new Vector3(16, 16, 0), transform.position + new Vector3(16, 16, 16));
-            Debug.DrawLine(transform.position + new Vector3(0, 0, 0), transform.position + new Vector3(0, 16, 0));
-            Debug.DrawLine(transform.position + new Vector3(16, 0, 0), transform.position + new Vector3(16, 16, 0));
-            Debug.DrawLine(transform.position + new Vector3(0, 0, 16), transform.position + new Vector3(0, 16, 16));
-            Debug.DrawLine(transform.position + new Vector3(16, 0, 16), transform.position + new Vector3(16, 16, 16));
-        }
-    }
-
-#if UNITY_EDITOR
-    [CustomEditor(typeof(ChunkController))]
-    public class ChunkControllerEditor : Editor
-    {
-        public override void OnInspectorGUI()
-        {
-            base.OnInspectorGUI();
-
-            var chunk = (ChunkController)target;
-
-            if(GUILayout.Button("Update Mesh")) chunk.UpdateMesh();
-        }
-    }
-#endif
+		private Cube.Side GetFacingCubeSide(int x, int y, int z, int side)
+		{
+			if(side == Forward)
+			{
+				return GetCubeSide(x + 1, y, z, side);
+			}
+			else if(side == Right)
+			{
+				return GetCubeSide(x, y, z + 1, side);
+			}
+			else if(side == Backward)
+			{
+				return GetCubeSide(x - 1, y, z, side);
+			}
+			else if(side == Left)
+			{
+				return GetCubeSide(x, y, z - 1, side);
+			}
+			else if(side == Up)
+			{
+				return GetCubeSide(x, y + 1, z, side);
+			}
+			else
+			{
+				return GetCubeSide(x, y - 1, z, side);
+			}
+		}
+	}
 }

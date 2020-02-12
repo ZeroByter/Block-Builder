@@ -106,13 +106,13 @@ namespace ZeroByterGames.BlockBuilder
                 AddTriangle(count, 0, 2, 3);
             }
 
-            float materialTextureWidth = ColorPaletteManager.GetPaletteWidth();
+            /*float materialTextureWidth = ColorPaletteManager.GetPaletteWidth();
             float materialTextureHeight = ColorPaletteManager.GetPaletteHeight();
 
             uvs.Add(new Vector2(uvTileX / materialTextureWidth, uvTileY / materialTextureHeight));
             uvs.Add(new Vector2(uvTileX / materialTextureWidth, uvTileY / materialTextureHeight));
             uvs.Add(new Vector2((uvTileX + 1) / materialTextureWidth, (uvTileY + 1) / materialTextureHeight));
-            uvs.Add(new Vector2((uvTileX + 1) / materialTextureWidth, (uvTileY + 1) / materialTextureHeight));
+            uvs.Add(new Vector2((uvTileX + 1) / materialTextureWidth, (uvTileY + 1) / materialTextureHeight));*/
         }
 
         public void AddCubeQuads(Vector3 origin, Vector3[] faces, int uvTileX, int uvTileY)
