@@ -52,6 +52,9 @@ namespace ZeroByterGames.BlockBuilder
 			}
 		}
 
+		public bool doGreedy;
+		public bool doCulling;
+
 		private MeshFilter meshFilter;
 		private MeshRenderer meshRenderer;
 		private MeshCollider meshCollider;
@@ -62,6 +65,7 @@ namespace ZeroByterGames.BlockBuilder
 		private List<int> triangles = new List<int>();
 
 		private Cube[,,] cubes = new Cube[16, 16, 16];
+		private bool[,] filledCubes = new bool[16, 16];
 
 		private void Awake()
 		{
@@ -74,13 +78,35 @@ namespace ZeroByterGames.BlockBuilder
 			meshRenderer.material = new Material(Shader.Find("Diffuse"));
 			meshCollider.sharedMesh = mesh;
 
-			cubes[0, 2, 0] = new Cube();
+			cubes[0, 1, 0] = new Cube();
+			cubes[1, 1, 0] = new Cube();
+			cubes[2, 1, 0] = new Cube();
+			cubes[3, 1, 0] = new Cube();
+			cubes[0, 1, 1] = new Cube();
+			cubes[1, 1, 1] = new Cube();
+			cubes[2, 1, 1] = new Cube();
+			cubes[3, 1, 1] = new Cube();
+			cubes[0, 1, 2] = new Cube();
+			cubes[1, 1, 2] = new Cube();
+			cubes[2, 1, 2] = new Cube();
+			cubes[3, 1, 2] = new Cube();
+			//cubes[2, 2, 2] = new Cube();
+			cubes[0, 1, 3] = new Cube();
+			cubes[1, 1, 3] = new Cube();
+			cubes[2, 1, 3] = new Cube();
+			cubes[3, 1, 3] = new Cube();
+
+			/*cubes[0, 2, 0] = new Cube();
 			cubes[1, 2, 0] = new Cube();
 			cubes[1, 1, 0] = new Cube();
 			cubes[1, 0, 0] = new Cube();
 			cubes[2, 2, 0] = new Cube();
 
+			cubes[0, 2, 1] = new Cube();
 			cubes[1, 2, 1] = new Cube();
+			cubes[2, 2, 1] = new Cube();
+			cubes[0, 2, 2] = new Cube();
+			cubes[1, 2, 2] = new Cube();*/
 
 			UpdateMesh();
 		}
@@ -91,84 +117,217 @@ namespace ZeroByterGames.BlockBuilder
 			vertices.Clear();
 			triangles.Clear();
 
-			for (int y = 0; y < 16; y++)
+			for (int currentSide = 0; currentSide < 6; currentSide++)
 			{
-				for (int x = 0; x < 16; x++)
+				//currentSide = Up;
+				filledCubes = new bool[16, 16];
+
+				if(currentSide == Up || currentSide == Down)
 				{
-					for (int z = 0; z < 16; z++)
+					for (int y = 0; y < 16; y++)
 					{
-						var side = GetCubeSide(x, y, z, Up);
-
-						if (side != null)
+						for (int z = 0; z < 16; z++)
 						{
-							var facingSide = GetFacingCubeSide(x, z, y, Up);
-
-							if (facingSide == null)
+							for (int x = 0; x < 16; x++)
 							{
-								int count = vertices.Count;
+								var renderSide = GetCubeSide(x, y, z, currentSide);
 
-								int[] biggestRectangle = GetBiggestRectangle(x, y, z, Up);
+								if (renderSide != null)
+								{
+									if (GetFacingCubeSide(x, y, z, currentSide) == null || !doCulling)
+									{
+										int count = vertices.Count;
 
-								vertices.Add(new Vector3(x, y + 1, z));
-								vertices.Add(new Vector3(x + biggestRectangle[0], y + 1, z));
-								vertices.Add(new Vector3(x + biggestRectangle[0], y + 1, z + biggestRectangle[1]));
-								vertices.Add(new Vector3(x, y + 1, z + biggestRectangle[1]));
+										if (!filledCubes[x, z])
+										{
+											int[] biggestRectangle = GetBiggestRectangle(x, y, z, currentSide);
 
-								triangles.Add(count + 2);
-								triangles.Add(count + 1);
-								triangles.Add(count + 0);
-								triangles.Add(count + 3);
-								triangles.Add(count + 2);
-								triangles.Add(count + 0);
+											if (currentSide == Up)
+											{
+												vertices.Add(new Vector3(x, y + 1, z));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y + 1, z));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y + 1, z + biggestRectangle[1]));
+												vertices.Add(new Vector3(x, y + 1, z + biggestRectangle[1]));
 
-								x += biggestRectangle[0];
-								z += biggestRectangle[1];
+												for (int filledX = x; filledX < x + biggestRectangle[0]; filledX++)
+												{
+													for (int filledZ = z; filledZ < z + biggestRectangle[1]; filledZ++)
+													{
+														filledCubes[filledX, filledZ] = true;
+													}
+												}
+											}
+											else //down
+											{
+												vertices.Add(new Vector3(x, y, z + biggestRectangle[1]));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y, z + biggestRectangle[1]));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y, z));
+												vertices.Add(new Vector3(x, y, z));
 
-								/*vertices.Add(new Vector3(x, y + 1, z));
-								vertices.Add(new Vector3(x + 1, y + 1, z));
-								vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-								vertices.Add(new Vector3(x, y + 1, z + 1));
+												for (int filledX = x; filledX < x + biggestRectangle[0]; filledX++)
+												{
+													for (int filledZ = z; filledZ < z + biggestRectangle[1]; filledZ++)
+													{
+														filledCubes[filledX, filledZ] = true;
+													}
+												}
+											}
 
-								triangles.Add(count + 2);
-								triangles.Add(count + 1);
-								triangles.Add(count + 0);
-								triangles.Add(count + 3);
-								triangles.Add(count + 2);
-								triangles.Add(count + 0);*/
+											triangles.Add(count + 2);
+											triangles.Add(count + 1);
+											triangles.Add(count + 0);
+											triangles.Add(count + 3);
+											triangles.Add(count + 2);
+											triangles.Add(count + 0);
+										}
+									}
+								}
 							}
 						}
 					}
 				}
+				else if(currentSide == Forward || currentSide == Backward)
+				{
+					for (int z = 0; z < 16; z++)
+					{
+						for (int x = 0; x < 16; x++)
+						{
+							for (int y = 0; y < 16; y++)
+							{
+								var renderSide = GetCubeSide(x, y, z, currentSide);
+
+								if (renderSide != null)
+								{
+									if (GetFacingCubeSide(x, y, z, currentSide) == null || !doCulling)
+									{
+										int count = vertices.Count;
+
+										if (!filledCubes[y, x])
+										{
+											int[] biggestRectangle = GetBiggestRectangle(x, y, z, currentSide);
+
+											if (currentSide == Forward)
+											{
+												vertices.Add(new Vector3(x, y + biggestRectangle[1], z + 1));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y + biggestRectangle[1], z + 1));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y, z + 1));
+												vertices.Add(new Vector3(x, y, z + 1));
+
+												for (int filledY = y; filledY < y + biggestRectangle[0]; filledY++)
+												{
+													for (int filledX = x; filledX < x + biggestRectangle[1]; filledX++)
+													{
+														filledCubes[filledY, filledX] = true;
+													}
+												}
+											}
+											else
+											{
+												vertices.Add(new Vector3(x, y, z));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y, z));
+												vertices.Add(new Vector3(x + biggestRectangle[0], y + biggestRectangle[1], z));
+												vertices.Add(new Vector3(x, y + biggestRectangle[1], z));
+
+												for (int filledY = y; filledY < y + biggestRectangle[0]; filledY++)
+												{
+													for (int filledX = x; filledX < x + biggestRectangle[1]; filledX++)
+													{
+														filledCubes[filledY, filledX] = true;
+													}
+												}
+											}
+
+											triangles.Add(count + 2);
+											triangles.Add(count + 1);
+											triangles.Add(count + 0);
+											triangles.Add(count + 3);
+											triangles.Add(count + 2);
+											triangles.Add(count + 0);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				//break;
 			}
 
 			mesh.vertices = vertices.ToArray();
 			mesh.triangles = triangles.ToArray();
+
+			print($"we have {mesh.triangles.Length} triangles");
 
 			mesh.RecalculateNormals();
 		}
 
 		private int[] GetBiggestRectangle(int startX, int startY, int startZ, int side)
 		{
-			var array = new int[2];
+			return new int[] { 1, 1 };
 
+			var array = new int[2];
 			array[1]++;
 
-			for (int y = startY; y < 16 - startY; y++)
+			if (side == Up || side == Down)
 			{
 				for (int z = startZ; z < 16 - startZ; z++)
 				{
+					bool expandZ = true;
 					for (int x = startX; x < 16 - startX; x++)
 					{
-						//idk man this doesnt work but were close!
-						//if (GetCubeSide(x, y, z + 1, side) == null) expandZ = false;
-						//if (GetCubeSide(x, y, z, side) == null) break;
+						if (GetFacingCubeSide(x, startY, z + 1, side) != null) expandZ = false;
+						if (GetIsCubeFilled(x, z + 1)) expandZ = false;
 
-						//TODO: Implemented culling, now need to figure out how to implement greedy!
+						if (GetCubeSide(x, startY, z, side) == null || GetFacingCubeSide(x, startY, z, side) != null)
+						{
+							if (x == startX) expandZ = false;
+							break;
+						}
+						if (GetCubeSide(x, startY, z + 1, side) == null) expandZ = false;
+						if (filledCubes[x, z]) break;
 
-						//Idea:
-						//Loop through X until cube is null
-						//In each X we loop to, check if there if we can also expand 'up' (y + 1). If we can't in even just one X loop, then dont add 'height' to rectangle
-						//If we can expand 'up', then do the same X loop thing but with Y++, if not, that's our final rectangle.
+						if (z == startZ) array[0]++;
+					}
+
+					if (expandZ)
+					{
+						array[1]++;
+					}
+					else
+					{
+						break; //if we don't have to expand z, there is no reason to keep looking furter
+					}
+				}
+			}
+			else if(side == Forward || side == Backward)
+			{
+				for (int z = startZ; z < 16 - startZ; z++)
+				{
+					bool expandZ = true;
+					for (int y = startX; y < 16 - startX; y++)
+					{
+						if (GetFacingCubeSide(startX, y, z + 1, side) != null) expandZ = false;
+						if (GetIsCubeFilled(y, z + 1)) expandZ = false;
+
+						if (GetCubeSide(startX, y, z, side) == null || GetFacingCubeSide(startX, y, z, side) != null)
+						{
+							if (y == startY) expandZ = false;
+							break;
+						}
+						if (GetCubeSide(startX, y, z + 1, side) == null) expandZ = false;
+						if (filledCubes[y, z]) break;
+
+						if (z == startZ) array[0]++;
+					}
+
+					if (expandZ)
+					{
+						array[1]++;
+					}
+					else
+					{
+						break; //if we don't have to expand z, there is no reason to keep looking furter
 					}
 				}
 			}
@@ -200,19 +359,19 @@ namespace ZeroByterGames.BlockBuilder
 		{
 			if(side == Forward)
 			{
-				return GetCubeSide(x + 1, y, z, side);
+				return GetCubeSide(x, y, z + 1, side);
 			}
 			else if(side == Right)
 			{
-				return GetCubeSide(x, y, z + 1, side);
+				return GetCubeSide(x + 1, y, z, side);
 			}
 			else if(side == Backward)
 			{
-				return GetCubeSide(x - 1, y, z, side);
+				return GetCubeSide(x, y, z - 1, side);
 			}
 			else if(side == Left)
 			{
-				return GetCubeSide(x, y, z - 1, side);
+				return GetCubeSide(x - 1, y, z, side);
 			}
 			else if(side == Up)
 			{
@@ -222,6 +381,35 @@ namespace ZeroByterGames.BlockBuilder
 			{
 				return GetCubeSide(x, y - 1, z, side);
 			}
+		}
+
+		private bool GetIsCubeFilled(int a, int b)
+		{
+			if (a < 0 || a > 15) return false;
+			if (b < 0 || b > 15) return false;
+			return filledCubes[a, b];
+		}
+
+		private static long Vector3ToLong(short x, short y, short z)
+		{
+			long data = 0;
+
+			data += x;
+			data <<= 16; //shifting by the size of a short
+			data += y + 1;
+			data <<= 16; //shifting by the size of a short
+			data += z;
+
+			return data;
+		}
+
+		int[] LongToVector3(long xyz)
+		{
+			int[] retVal = new int[3]; //you do the thing
+			retVal[2] = (short)(xyz & 0x00000000FFFF); //mask out the right-most 2 bytes
+			retVal[1] = (short)((xyz & 0x0000FFFF0000) >> 16); //mask out the "middle-right" 2 bytes and shift them
+			retVal[0] = (short)((xyz & 0xFFFF00000000) >> 32); //mask out the "middle-left" 2 bytes and shift them
+			return retVal;
 		}
 	}
 }
