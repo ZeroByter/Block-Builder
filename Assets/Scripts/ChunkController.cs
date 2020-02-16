@@ -65,7 +65,14 @@ namespace ZeroByterGames.BlockBuilder
         private List<int> triangles = new List<int>();
 
         private Cube[,,] cubes = new Cube[16, 16, 16];
+        /// <summary>
+        /// Only temporarily used for mesh generation
+        /// </summary>
         private bool[,] filledCubes = new bool[16, 16];
+
+        private int cubesCount;
+
+        private Vector3Int chunkPosition;
 
         private void Awake()
         {
@@ -78,40 +85,14 @@ namespace ZeroByterGames.BlockBuilder
             meshRenderer.material = new Material(Shader.Find("Diffuse"));
             meshCollider.sharedMesh = mesh;
 
-            cubes[0, 1, 0] = new Cube();
-            cubes[1, 1, 0] = new Cube();
-            cubes[2, 1, 0] = new Cube();
-            cubes[3, 1, 0] = new Cube();
-            cubes[0, 1, 1] = new Cube();
-            cubes[1, 1, 1] = new Cube();
-            cubes[2, 1, 1] = new Cube();
-            cubes[3, 1, 1] = new Cube();
-            cubes[0, 1, 2] = new Cube();
-            cubes[1, 1, 2] = new Cube();
-            cubes[2, 1, 2] = new Cube();
-            cubes[3, 1, 2] = new Cube();
-            //cubes[2, 2, 2] = new Cube();
-            cubes[0, 1, 3] = new Cube();
-            cubes[1, 1, 3] = new Cube();
-            cubes[2, 1, 3] = new Cube();
-            cubes[3, 1, 3] = new Cube();
-
-            /*cubes[0, 2, 0] = new Cube();
-			cubes[1, 2, 0] = new Cube();
-			cubes[1, 1, 0] = new Cube();
-			cubes[1, 0, 0] = new Cube();
-			cubes[2, 2, 0] = new Cube();
-
-			cubes[0, 2, 1] = new Cube();
-			cubes[1, 2, 1] = new Cube();
-			cubes[2, 2, 1] = new Cube();
-			cubes[0, 2, 2] = new Cube();
-			cubes[1, 2, 2] = new Cube();*/
+            var pos = transform.position;
+            chunkPosition = new Vector3Int((int)pos.x / 16, (int)pos.y / 16, (int)pos.z / 16);
 
             UpdateMesh();
         }
 
-        private void UpdateMesh()
+        #region Mesh generation
+        public void UpdateMesh()
         {
             mesh.Clear();
             vertices.Clear();
@@ -119,7 +100,6 @@ namespace ZeroByterGames.BlockBuilder
 
             for (int currentSide = 0; currentSide < 6; currentSide++)
             {
-                //currentSide = Up;
                 filledCubes = new bool[16, 16];
 
                 if (currentSide == Up || currentSide == Down)
@@ -314,22 +294,16 @@ namespace ZeroByterGames.BlockBuilder
                         }
                     }
                 }
-
-                //break;
             }
 
             mesh.vertices = vertices.ToArray();
             mesh.triangles = triangles.ToArray();
-
-            print($"we have {mesh.triangles.Length} triangles");
 
             mesh.RecalculateNormals();
         }
 
         private int[] GetBiggestRectangle(int startX, int startY, int startZ, int side)
         {
-            //return new int[] { 1, 1 };
-
             var array = new int[2];
             array[1]++;
 
@@ -429,6 +403,48 @@ namespace ZeroByterGames.BlockBuilder
 
             return array;
         }
+        #endregion
+
+        public void AddCube(int x, int y, int z)
+        {
+            if (x < 0 || x >= cubes.GetLength(0) || y < 0 || y >= cubes.GetLength(1) || z < 0 || z >= cubes.GetLength(2)) return;
+
+            cubes[x, y, z] = new Cube();
+            cubesCount++;
+
+            UpdateAdjacentChunk(x, y, z);
+
+            UpdateMesh();
+        }
+
+        public void RemoveCube(int x, int y, int z)
+        {
+            if (x < 0 || x >= cubes.GetLength(0) || y < 0 || y >= cubes.GetLength(1) || z < 0 || z >= cubes.GetLength(2)) return;
+
+            cubes[x, y, z] = null;
+            cubesCount--;
+
+            UpdateAdjacentChunk(x, y, z);
+
+            if (cubesCount <= 0)
+            {
+                ModelManager.RemoveChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z);
+                return;
+            }
+
+            UpdateMesh();
+        }
+
+        private void UpdateAdjacentChunk(int x, int y, int z)
+        {
+            //If we are on the edge of the chunk, update the nearby chunk
+            if (x < 1) ModelManager.UpdateChunk(chunkPosition.x - 1, chunkPosition.y, chunkPosition.z);
+            if (x >= cubes.GetLength(0) - 1) ModelManager.UpdateChunk(chunkPosition.x + 1, chunkPosition.y, chunkPosition.z);
+            if (y < 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y - 1, chunkPosition.z);
+            if (y >= cubes.GetLength(1) - 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y + 1, chunkPosition.z);
+            if (z < 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z - 1);
+            if (z >= cubes.GetLength(2) - 1) ModelManager.UpdateChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z + 1);
+        }
 
         private bool IsInChunk(int x, int y, int z)
         {
@@ -439,9 +455,9 @@ namespace ZeroByterGames.BlockBuilder
             return true;
         }
 
-        private Cube.Side GetCubeSide(int x, int y, int z, int side)
+        public Cube.Side GetCubeSide(int x, int y, int z, int side)
         {
-            if (!IsInChunk(x, y, z)) return null; //TODO: get cube in adjacent chunk instead of null
+            if (!IsInChunk(x, y, z)) return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(x + transform.position.x), side); //TODO: get cube in adjacent chunk instead of null
             if (side < 0 || side > 5) return null;
 
             var cube = cubes[x, y, z];
@@ -485,26 +501,9 @@ namespace ZeroByterGames.BlockBuilder
             return filledCubes[a, b];
         }
 
-        private static long Vector3ToLong(short x, short y, short z)
+        public void SetMaterial(Material material)
         {
-            long data = 0;
-
-            data += x;
-            data <<= 16; //shifting by the size of a short
-            data += y + 1;
-            data <<= 16; //shifting by the size of a short
-            data += z;
-
-            return data;
-        }
-
-        int[] LongToVector3(long xyz)
-        {
-            int[] retVal = new int[3]; //you do the thing
-            retVal[2] = (short)(xyz & 0x00000000FFFF); //mask out the right-most 2 bytes
-            retVal[1] = (short)((xyz & 0x0000FFFF0000) >> 16); //mask out the "middle-right" 2 bytes and shift them
-            retVal[0] = (short)((xyz & 0xFFFF00000000) >> 32); //mask out the "middle-left" 2 bytes and shift them
-            return retVal;
+            meshRenderer.material = material;
         }
     }
 }
