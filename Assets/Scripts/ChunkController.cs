@@ -52,9 +52,6 @@ namespace ZeroByterGames.BlockBuilder
             }
         }
 
-        public bool doGreedy;
-        public bool doCulling;
-
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
         private MeshCollider meshCollider;
@@ -114,7 +111,7 @@ namespace ZeroByterGames.BlockBuilder
 
                                 if (renderSide != null)
                                 {
-                                    if (GetFacingCubeSide(x, y, z, currentSide) == null || !doCulling)
+                                    if (GetFacingCubeSide(x, y, z, currentSide) == null)
                                     {
                                         int count = vertices.Count;
 
@@ -178,7 +175,7 @@ namespace ZeroByterGames.BlockBuilder
 
                                 if (renderSide != null)
                                 {
-                                    if (GetFacingCubeSide(x, y, z, currentSide) == null || !doCulling)
+                                    if (GetFacingCubeSide(x, y, z, currentSide) == null)
                                     {
                                         int count = vertices.Count;
 
@@ -242,7 +239,7 @@ namespace ZeroByterGames.BlockBuilder
 
                                 if (renderSide != null)
                                 {
-                                    if (GetFacingCubeSide(x, y, z, currentSide) == null || !doCulling)
+                                    if (GetFacingCubeSide(x, y, z, currentSide) == null)
                                     {
                                         int count = vertices.Count;
 
@@ -504,6 +501,16 @@ namespace ZeroByterGames.BlockBuilder
         public void SetMaterial(Material material)
         {
             meshRenderer.material = material;
+        }
+
+        public int GetVerticesCount()
+        {
+            return vertices.Count;
+        }
+
+        public int GetTrianglesCount()
+        {
+            return triangles.Count;
         }
     }
 }
