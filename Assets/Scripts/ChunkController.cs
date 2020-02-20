@@ -175,11 +175,11 @@ namespace ZeroByterGames.BlockBuilder
 
                                 if (renderSide != null)
                                 {
-                                    if (GetFacingCubeSide(x, y, z, currentSide) == null)
+                                    if (GetFacingCubeSide(x, y, z, currentSide) == null || true)
                                     {
                                         int count = vertices.Count;
 
-                                        if (!filledCubes[y, x])
+                                        if (!filledCubes[y, x] || true)
                                         {
                                             int[] biggestRectangle = GetBiggestRectangle(x, y, z, currentSide);
 
@@ -249,6 +249,7 @@ namespace ZeroByterGames.BlockBuilder
 
                                             if (currentSide == Right)
                                             {
+                                                //Left and right vertex filling is a little weird...
                                                 vertices.Add(new Vector3(x + 1, y + biggestRectangle[1], z + biggestRectangle[0]));
                                                 vertices.Add(new Vector3(x + 1, y, z));
                                                 vertices.Add(new Vector3(x + 1, y, z + biggestRectangle[0]));
@@ -301,20 +302,22 @@ namespace ZeroByterGames.BlockBuilder
 
         private int[] GetBiggestRectangle(int startX, int startY, int startZ, int side)
         {
+            //return new int[] { 1, 1 };
+
             var array = new int[2];
             array[1]++;
 
             if (side == Up || side == Down)
             {
-                for (int z = startZ; z < 16 - startZ; z++)
+                for (int z = startZ; z < Mathf.Min(16, startZ + 16); z++)
                 {
                     bool expandZ = true;
-                    for (int x = startX; x < 16 - startX; x++)
+                    for (int x = startX; x < Mathf.Min(16, startX + 16); x++)
                     {
                         if (GetFacingCubeSide(x, startY, z + 1, side) != null) expandZ = false;
                         if (GetIsCubeFilled(x, z + 1)) expandZ = false;
 
-                        if (GetCubeSide(x, startY, z, side) == null || GetFacingCubeSide(x, startY, z, side) != null)
+                        if (!IsInChunk(x, startY, z + 1) || GetCubeSide(x, startY, z, side) == null || GetFacingCubeSide(x, startY, z, side) != null)
                         {
                             if (x == startX) expandZ = false;
                             break;
@@ -325,58 +328,48 @@ namespace ZeroByterGames.BlockBuilder
                         if (z == startZ) array[0]++;
                     }
 
-                    if (expandZ)
-                    {
-                        array[1]++;
-                    }
-                    else
-                    {
-                        break; //if we don't have to expand z, there is no reason to keep looking furter
-                    }
+                    if (!expandZ) break;//if we don't have to expand z, there is no reason to keep looking furter
+                    array[1]++;
                 }
             }
             else if (side == Forward || side == Backward)
             {
-                for (int y = startY; y < 16 - startY; y++)
+                //return new int[] { 1, 1 };
+
+                for (int y = startY; y < Mathf.Min(16, startY + 16); y++)
                 {
                     bool expandY = true;
-                    for (int x = startX; x < 16 - startX; x++)
+                    for (int x = startX; x < Mathf.Min(16, startX + 16); x++)
                     {
-                        if (GetFacingCubeSide(x + 1, y, startZ, side) != null) expandY = false;
-                        if (GetIsCubeFilled(y, x + 1)) expandY = false;
+                        if (GetFacingCubeSide(x, y + 1, startZ, side) != null) expandY = false;
+                        if (GetIsCubeFilled(y + 1, x)) expandY = false;
 
-                        if (GetCubeSide(x, y, startZ, side) == null || GetFacingCubeSide(x, y, startZ, side) != null)
+                        if (!IsInChunk(x, y + 1, startZ) || GetCubeSide(x, y, startZ, side) == null || GetFacingCubeSide(x, y, startZ, side) != null)
                         {
                             if (x == startX) expandY = false;
                             break;
                         }
-                        if (GetCubeSide(x + 1, y, startZ, side) == null) expandY = false;
+                        if (GetCubeSide(x, y + 1, startZ, side) == null) expandY = false;
                         if (filledCubes[y, x]) break;
 
                         if (y == startY) array[0]++;
                     }
 
-                    if (expandY)
-                    {
-                        array[1]++;
-                    }
-                    else
-                    {
-                        break; //if we don't have to expand z, there is no reason to keep looking furter
-                    }
+                    if (!expandY) break;//if we don't have to expand y, there is no reason to keep looking furter
+                    array[1]++;
                 }
             }
             else //left or right
             {
-                for (int y = startY; y < 16 - startY; y++)
+                for (int y = startY; y < Mathf.Min(16, startY + 16); y++)
                 {
                     bool expandY = true;
-                    for (int z = startZ; z < 16 - startZ; z++)
+                    for (int z = startZ; z < Mathf.Min(16, startZ + 16); z++)
                     {
                         if (GetFacingCubeSide(startX, y + 1, z, side) != null) expandY = false;
                         if (GetIsCubeFilled(y + 1, z)) expandY = false;
 
-                        if (GetCubeSide(startX, y, z, side) == null || GetFacingCubeSide(startX, y, z, side) != null)
+                        if (!IsInChunk(startX, y + 1, z) || GetCubeSide(startX, y, z, side) == null || GetFacingCubeSide(startX, y, z, side) != null)
                         {
                             if (z == startZ) expandY = false;
                             break;
@@ -387,14 +380,9 @@ namespace ZeroByterGames.BlockBuilder
                         if (y == startY) array[0]++;
                     }
 
-                    if (expandY)
-                    {
-                        array[1]++;
-                    }
-                    else
-                    {
-                        break; //if we don't have to expand z, there is no reason to keep looking furter
-                    }
+
+                    if (!expandY) break;//if we don't have to expand y, there is no reason to keep looking furter
+                    array[1]++;
                 }
             }
 
@@ -402,26 +390,29 @@ namespace ZeroByterGames.BlockBuilder
         }
         #endregion
 
-        public void AddCube(int x, int y, int z)
+        public void AddCube(int x, int y, int z, bool updateMesh = true)
         {
             if (x < 0 || x >= cubes.GetLength(0) || y < 0 || y >= cubes.GetLength(1) || z < 0 || z >= cubes.GetLength(2)) return;
 
             cubes[x, y, z] = new Cube();
             cubesCount++;
 
-            UpdateAdjacentChunk(x, y, z);
+            if (updateMesh)
+            {
+                UpdateAdjacentChunk(x, y, z);
 
-            UpdateMesh();
+                UpdateMesh();
+            }
         }
 
-        public void RemoveCube(int x, int y, int z)
+        public void RemoveCube(int x, int y, int z, bool updateMesh = true)
         {
             if (x < 0 || x >= cubes.GetLength(0) || y < 0 || y >= cubes.GetLength(1) || z < 0 || z >= cubes.GetLength(2)) return;
 
             cubes[x, y, z] = null;
             cubesCount--;
 
-            UpdateAdjacentChunk(x, y, z);
+            if (updateMesh) UpdateAdjacentChunk(x, y, z);
 
             if (cubesCount <= 0)
             {
@@ -429,7 +420,7 @@ namespace ZeroByterGames.BlockBuilder
                 return;
             }
 
-            UpdateMesh();
+            if(updateMesh) UpdateMesh();
         }
 
         private void UpdateAdjacentChunk(int x, int y, int z)
@@ -454,7 +445,7 @@ namespace ZeroByterGames.BlockBuilder
 
         public Cube.Side GetCubeSide(int x, int y, int z, int side)
         {
-            if (!IsInChunk(x, y, z)) return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(x + transform.position.x), side); //TODO: get cube in adjacent chunk instead of null
+            if (!IsInChunk(x, y, z)) return ModelManager.GetCube(Mathf.FloorToInt(x + transform.position.x), Mathf.FloorToInt(y + transform.position.y), Mathf.FloorToInt(z + transform.position.z), side);
             if (side < 0 || side > 5) return null;
 
             var cube = cubes[x, y, z];
@@ -511,6 +502,22 @@ namespace ZeroByterGames.BlockBuilder
         public int GetTrianglesCount()
         {
             return triangles.Count;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Debug.DrawLine(transform.position + new Vector3(0, 0, 0), transform.position + new Vector3(16, 0, 0));
+            Debug.DrawLine(transform.position + new Vector3(0, 0, 16), transform.position + new Vector3(16, 0, 16));
+            Debug.DrawLine(transform.position + new Vector3(0, 0, 0), transform.position + new Vector3(0, 0, 16));
+            Debug.DrawLine(transform.position + new Vector3(16, 0, 0), transform.position + new Vector3(16, 0, 16));
+            Debug.DrawLine(transform.position + new Vector3(0, 16, 0), transform.position + new Vector3(16, 16, 0));
+            Debug.DrawLine(transform.position + new Vector3(0, 16, 16), transform.position + new Vector3(16, 16, 16));
+            Debug.DrawLine(transform.position + new Vector3(0, 16, 0), transform.position + new Vector3(0, 16, 16));
+            Debug.DrawLine(transform.position + new Vector3(16, 16, 0), transform.position + new Vector3(16, 16, 16));
+            Debug.DrawLine(transform.position + new Vector3(0, 0, 0), transform.position + new Vector3(0, 16, 0));
+            Debug.DrawLine(transform.position + new Vector3(16, 0, 0), transform.position + new Vector3(16, 16, 0));
+            Debug.DrawLine(transform.position + new Vector3(0, 0, 16), transform.position + new Vector3(0, 16, 16));
+            Debug.DrawLine(transform.position + new Vector3(16, 0, 16), transform.position + new Vector3(16, 16, 16));
         }
     }
 }
