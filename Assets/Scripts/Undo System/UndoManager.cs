@@ -13,6 +13,7 @@ namespace ZeroByterGames.BlockBuilder.UndoSystem
 
 			if (Singleton.redoIndex > 0)
 			{
+				//Singleton.actions.RemoveRange(0, Singleton.redoIndex);
 				Singleton.actions.RemoveRange(Singleton.actions.Count - Singleton.redoIndex, Singleton.redoIndex);
 				Singleton.redoIndex = 0;
 			}
@@ -42,6 +43,8 @@ namespace ZeroByterGames.BlockBuilder.UndoSystem
 					var action = actions[actions.Count - Mathf.Clamp(redoIndex, 1, actions.Count)];
 
 					action.ReverseAction();
+
+					//actions.RemoveAt(actions.Count - 1);
 				}
 			}
 #if UNITY_EDITOR
@@ -57,6 +60,7 @@ namespace ZeroByterGames.BlockBuilder.UndoSystem
 					action.RedoAction();
 
 					redoIndex = Mathf.Max(0, redoIndex - 1);
+					//actions.RemoveAt(actions.Count - 1);
 				}
 			}
 		}
