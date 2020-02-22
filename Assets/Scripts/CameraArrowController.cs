@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ZeroByterGames.BlockBuilder.TransformSystem
+namespace ZeroByterGames.BlockBuilder
 {
 	public class CameraArrowController : MonoBehaviour
 	{
@@ -22,8 +22,8 @@ namespace ZeroByterGames.BlockBuilder.TransformSystem
 
 		private void Update()
 		{
-			transform.forward = CameraController.GetCamera().transform.InverseTransformDirection(normal);
-			transform.localPosition = transform.forward;
+			//transform.forward = CameraController.GetCamera().transform.InverseTransformDirection(normal);
+			//transform.localPosition = transform.forward;
 		}
 	}
 }
