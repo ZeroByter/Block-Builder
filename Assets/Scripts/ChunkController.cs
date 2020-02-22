@@ -115,10 +115,13 @@ namespace ZeroByterGames.BlockBuilder
 
             for (int x = 0; x < newSize.x; x++)
             {
+                if (x >= cubes.GetLength(0)) break;
                 for (int y = 0; y < newSize.y; y++)
                 {
+                    if (y >= cubes.GetLength(1)) break;
                     for (int z = 0; z < newSize.z; z++)
                     {
+                        if (z >= cubes.GetLength(2)) break;
                         newCubes[x, y, z] = cubes[x, y, z];
                     }
                 }
