@@ -1,43 +1,40 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 namespace ZeroByterGames.BlockBuilder
 {
 	public class CameraController : MonoBehaviour
 	{
-		private int i;
+		new private Camera camera;
+
+		private Vector3 dragStartPosition;
+		private Vector2 dragStartMousePosition;
+		private float dragSpeedMultiplier = 0.025f;
+
+		private void Awake()
+		{
+			camera = GetComponent<Camera>();
+		}
 
 		private void Update()
 		{
+			/*if (Input.GetKeyDown(KeyCode.Mouse1))
+			{
+				dragStartPosition = transform.position;
+				dragStartMousePosition = Input.mousePosition;
+			}
+
+			if (Input.GetKey(KeyCode.Mouse1))
+			{
+				transform.position = (dragStartPosition + transform.right * ((Input.mousePosition.x - dragStartMousePosition.x) * dragSpeedMultiplier)) + (transform.up * ((Input.mousePosition.y - dragStartMousePosition.y) * dragSpeedMultiplier));
+			}*/
+
 			if (Input.GetKeyDown(KeyCode.Mouse0))
 			{
-				/*ModelManager.AddCube(i++, 0, 0);
-				ModelManager.AddCube(i++, 0, 0);
-				ModelManager.AddCube(i++, 0, 0);*/
-
-				int width = 16;
-				int height = 32;
-				int length = 64;
-
-				var watch = new Stopwatch();
-				watch.Start();
-				var list = new List<Vector3Int>();
-				list.Capacity = width * height * length;
-				for (int y = 0; y < height; y++)
-				{
-					for (int x = 0; x < width; x++)
-					{
-						for (int z = 0; z < length; z++)
-						{
-							list.Add(new Vector3Int(x, y, z));
-						}
-					}
-				}
-				ModelManager.AddCubes(list);
-				watch.Stop();
-				print($"took {watch.ElapsedMilliseconds}ms to create mesh");
+				ModelManager.AddCube(0, 0, 0);
 			}
+
+			//camera.orthographicSize = Mathf.Clamp(camera.orthographicSize - Input.mouseScrollDelta.y * 0.2f, 0.2f, 10f);
 		}
 	}
 }
